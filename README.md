@@ -11,11 +11,15 @@ fun-apps/
 └── site/
     ├── index.html         # Landing-Page (Kachel-Liste aller Apps)
     ├── styles.css
-    └── drinks/            # App 1: Kellner-Bestellsystem (Bitburger Wirtshaus Trier)
+    ├── drinks/            # App 1: Kellner-Bestellsystem (Bitburger Wirtshaus Trier)
+    │   ├── index.html
+    │   ├── styles.css
+    │   ├── data.js        # kompletter Getränkekatalog (aus offizieller Speisekarte)
+    │   └── app.js         # Such-/Filter-/Warenkorb-/Tisch-Logik
+    └── kniffel/           # App 2: Kniffel-Spielblock (digitaler Punkteblock)
         ├── index.html
         ├── styles.css
-        ├── data.js        # kompletter Getränkekatalog (aus offizieller Speisekarte)
-        └── app.js         # Such-/Filter-/Warenkorb-/Tisch-Logik
+        └── app.js         # Setup/Drag&Drop-, Score-Block- und Ergebnis-Logik
 ```
 
 Kein Build-Step, keine externen CDN-Abhängigkeiten. Weil nginx echte Unterordner
@@ -52,3 +56,16 @@ kompletten Getränkekatalog, Antippen legt Getränke (mit Größen-/Jumbo-Varian
 Warenkorb, mehrere Tische parallel (persistiert in `localStorage`), Happy-Hour-Umschalter
 (Cocktails/Caipis halber Preis bis 22 Uhr), laufende Summe, "Bestellung absenden" (Mock).
 Kein Backend. Datenquelle: offizielle Speisekarte BIWI-TR-Speisekarte-03-2024.
+
+## App 2: Kniffel – Spielblock
+
+Digitaler Kniffel-/Yahtzee-Punkteblock, mobile-first, kein Backend (Spielstand in
+`localStorage`). Ablauf in drei Phasen:
+
+1. **Setup:** 2–8 Spieler anlegen, Reihenfolge per **Drag & Drop** (Griff ≡) sortieren.
+2. **Spiel:** Score-Tabelle mit sticky Kategorie-Spalte und einer Spalte je Spieler.
+   Leere Zelle antippen → Eingabe-Sheet mit gültigen Werten (bzw. Streichen). Oberer
+   Block, **35er-Bonus ab 63**, unterer Block und Gesamtsumme werden live berechnet;
+   der Spieler mit den wenigsten Einträgen ist dezent als „am Zug" markiert.
+3. **Ergebnis:** Rangliste mit Medaillen, Gewinner-Hervorhebung und Aufschlüsselung;
+   „Nochmal (gleiche Spieler)" oder „Neues Spiel".

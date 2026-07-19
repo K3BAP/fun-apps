@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1c1a17" />
+  <meta name="description" content="Kniffel-Spielblock – digitaler Punkteblock mit automatischer Berechnung" />
+  <title>Kniffel · Spielblock</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎲</text></svg>" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Ansichten – JS blendet je nach Phase eine ein -->
+  <main id="view-setup" class="view" hidden></main>
+  <main id="view-play" class="view" hidden></main>
+  <main id="view-result" class="view" hidden></main>
+
+  <!-- Overlay -->
+  <div id="scrim" class="scrim" hidden></div>
+
+  <!-- Eingabe-Sheet -->
+  <section id="entrySheet" class="sheet" hidden aria-label="Punkte eintragen">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <div id="entryHead" class="entry-head"></div>
+      <button class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div id="entryBody" class="entry-body"></div>
+    <div id="entryFoot" class="entry-foot"></div>
+  </section>
+
+  <!-- Menü-Sheet -->
+  <section id="menuSheet" class="sheet sheet-sm" hidden aria-label="Menü">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <h2>Menü</h2>
+      <button class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="menu-list">
+      <button class="menu-item" data-menu="continue">Weiterspielen</button>
+      <button class="menu-item" data-menu="setup">Zurück zur Spielerauswahl</button>
+      <button class="menu-item danger" data-menu="reset">Spiel zurücksetzen</button>
+    </div>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>
