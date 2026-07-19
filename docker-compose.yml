@@ -1,0 +1,16 @@
+services:
+  # Sammelprojekt fun-apps – statische Spaß-/Prototyp-Webapps (kein Build, kein Backend).
+  # nginx liefert ./site aus; jede App liegt in einem Unterordner (z. B. site/drinks).
+  # Reverse-Proxy + TLS übernimmt Caddy (Block fun.sponholz.org). Kein Portexport.
+  fun-apps-web:
+    image: nginx:alpine
+    container_name: fun-apps-web
+    restart: unless-stopped
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+    networks:
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external: true
