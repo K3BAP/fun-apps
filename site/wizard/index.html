@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1c1a17" />
+  <meta name="description" content="Wizard-Spielblock – digitaler Punkteblock mit Ansage, Stichen und automatischer Wertung" />
+  <title>Wizard · Spielblock</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧙</text></svg>" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Ansichten – JS blendet je nach Phase eine ein -->
+  <main id="view-setup" class="view" hidden></main>
+  <main id="view-play" class="view" hidden></main>
+  <main id="view-result" class="view" hidden></main>
+
+  <!-- Overlay -->
+  <div id="scrim" class="scrim" hidden></div>
+
+  <!-- Menü-Sheet -->
+  <section id="menuSheet" class="sheet sheet-sm" hidden aria-label="Menü">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <h2>Menü</h2>
+      <button class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div id="menuList" class="menu-list"></div>
+  </section>
+
+  <!-- Block-Übersicht -->
+  <section id="blockSheet" class="sheet" hidden aria-label="Spielblock">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <h2>Block · Ansage · Stiche</h2>
+      <button class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div id="blockBody" class="block-body"></div>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>

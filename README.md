@@ -16,10 +16,14 @@ fun-apps/
     │   ├── styles.css
     │   ├── data.js        # kompletter Getränkekatalog (aus offizieller Speisekarte)
     │   └── app.js         # Such-/Filter-/Warenkorb-/Tisch-Logik
-    └── kniffel/           # App 2: Kniffel-Spielblock (digitaler Punkteblock)
+    ├── kniffel/           # App 2: Kniffel-Spielblock (digitaler Punkteblock)
+    │   ├── index.html
+    │   ├── styles.css
+    │   └── app.js         # Setup/Drag&Drop-, Score-Block- und Ergebnis-Logik
+    └── wizard/            # App 3: Wizard-Spielblock (Ansage/Stiche, kumulativ)
         ├── index.html
         ├── styles.css
-        └── app.js         # Setup/Drag&Drop-, Score-Block- und Ergebnis-Logik
+        └── app.js         # Setup/Drag&Drop-, Runden- und Ergebnis-Logik
 ```
 
 Kein Build-Step, keine externen CDN-Abhängigkeiten. Weil nginx echte Unterordner
@@ -69,3 +73,20 @@ Digitaler Kniffel-/Yahtzee-Punkteblock, mobile-first, kein Backend (Spielstand i
    der Spieler mit den wenigsten Einträgen ist dezent als „am Zug" markiert.
 3. **Ergebnis:** Rangliste mit Medaillen, Gewinner-Hervorhebung und Aufschlüsselung;
    „Nochmal (gleiche Spieler)" oder „Neues Spiel".
+
+## App 3: Wizard – Spielblock
+
+Digitaler Punkteblock zum Stich-Vorhersage-Kartenspiel *Wizard*, mobile-first, kein
+Backend (Spielstand in `localStorage`). **2–6 Spieler**, Rundenzahl automatisch = ⌊60 ÷
+Spieler⌋ (2→30, 3→20, 4→15, 5→12, 6→10). Ablauf:
+
+1. **Setup:** Spieler anlegen, Reihenfolge per **Drag & Drop**; Umschalter für das
+   **Ansage-Verbot** (Summe der Ansagen darf ≠ Stichzahl der Runde sein).
+2. **Spiel (rundenweise, geführt):** Standings-Leiste mit laufendem Punktestand, dann
+   Schritt **Ansagen** (Stepper 0…r je Spieler; Geber sagt zuletzt an, bei aktivem Verbot
+   ist eine Summe = Stichzahl gesperrt) und Schritt **Stiche** (Stepper 0…r, Summe muss
+   genau r ergeben). Wertung je Runde: **Ansage getroffen → 20 + 10·Stiche**, sonst **−10
+   je Stich Abweichung**. „Block ansehen" zeigt die komplette Tabelle (Ansage·Stiche +
+   Laufsumme je Runde).
+3. **Ergebnis:** Endrangliste mit Medaillen; Gewinner = höchste Summe; getroffene Ansagen
+   je Spieler; „Nochmal (gleiche Spieler)" oder „Neues Spiel".
