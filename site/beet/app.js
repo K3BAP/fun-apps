@@ -306,7 +306,7 @@
     // Ganze Salate
     var salRow = el("div", "bed-row");
     salRow.appendChild(el("span", "bed-label", "🥬 Ganze Salate"));
-    salRow.appendChild(stepper(bed.salate, 0, 4, function (nv) { bed.salate = nv; save(); render(); }));
+    salRow.appendChild(stepper(bed.salate, 0, 99, function (nv) { bed.salate = nv; save(); render(); }));
     card.appendChild(salRow);
 
     // Keine halben Salate
@@ -322,7 +322,7 @@
     // Tomate+Paprika-Paare
     var pairRow = el("div", "bed-row");
     pairRow.appendChild(el("span", "bed-label", "🍅🫑 Tomate+Paprika-Paare"));
-    pairRow.appendChild(stepper(bed.pairs, 0, 2, function (nv) { bed.pairs = nv; save(); render(); }));
+    pairRow.appendChild(stepper(bed.pairs, 0, 99, function (nv) { bed.pairs = nv; save(); render(); }));
     card.appendChild(pairRow);
 
     return card;
