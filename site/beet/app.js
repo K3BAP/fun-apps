@@ -314,7 +314,7 @@
     var cb = el("input"); cb.type = "checkbox"; cb.checked = bed.noHalf;
     cb.addEventListener("change", function () { bed.noHalf = cb.checked; save(); render(); });
     halfRow.appendChild(el("span", "bed-label", "Keine halben Salate"));
-    var track = el("span", "mini-track"); track.appendChild(el("span", "mini-thumb"));
+    var track = el("span", "mini-track" + (bed.noHalf ? " on" : "")); track.appendChild(el("span", "mini-thumb"));
     halfRow.insertBefore(cb, halfRow.firstChild);
     halfRow.appendChild(track);
     card.appendChild(halfRow);
