@@ -20,10 +20,14 @@ fun-apps/
     │   ├── index.html
     │   ├── styles.css
     │   └── app.js         # Setup/Drag&Drop-, Score-Block- und Ergebnis-Logik
-    └── wizard/            # App 3: Wizard-Spielblock (Ansage/Stiche, kumulativ)
+    ├── wizard/            # App 3: Wizard-Spielblock (Ansage/Stiche, kumulativ)
+    │   ├── index.html
+    │   ├── styles.css
+    │   └── app.js         # Setup/Drag&Drop-, Runden- und Ergebnis-Logik
+    └── beet/              # App 4: „Ab ins Beet"-Zähler (Beet/Bonus/Tier, 3 Durchgänge)
         ├── index.html
-        ├── styles.css
-        └── app.js         # Setup/Drag&Drop-, Runden- und Ergebnis-Logik
+        ├── styles.css     # eigenes verspieltes Garten-Theme
+        └── app.js         # Setup/Drag&Drop-, Phasen- und Ergebnis-Logik
 ```
 
 Kein Build-Step, keine externen CDN-Abhängigkeiten. Weil nginx echte Unterordner
@@ -90,3 +94,19 @@ Spieler⌋ (2→30, 3→20, 4→15, 5→12, 6→10). Ablauf:
    Laufsumme je Runde).
 3. **Ergebnis:** Endrangliste mit Medaillen; Gewinner = höchste Summe; getroffene Ansagen
    je Spieler; „Nochmal (gleiche Spieler)" oder „Neues Spiel".
+
+## App 4: Ab ins Beet – Zähler
+
+Punktezähler zum Brettspiel *Ab ins Beet* (Game Factory), mobile-first, kein Backend
+(Spielstand in `localStorage`), **eigenes verspieltes Garten-Theme** (hell, Erd-Braun +
+Grün + Gemüse-Farben). **2–4 Gärtner**, **3 Durchgänge** mit je 3 Wertungsphasen:
+
+1. **① Beete (geführter Rechner, Pager pro Spieler):** je Beet Farbigkeit (einfarbig 3 /
+   zweifarbig 1 / dreifarbig 0) + ganze Salate (+1 je) + „keine halben Salate" (+1) +
+   Tomate-Paprika-Paare (+1 je) antippen → App rechnet die Beetpunkte.
+2. **② Bonus (automatisch):** meiste Beetpunkte → 10, wenigste → 0, dazwischen → 5.
+3. **③ Tierkarten:** 5 Punkte je Beet, das eine Tierkarte erfüllt (Anzahl selbst zählen,
+   max = Durchgangsnummer).
+
+Endstand über 3 Durchgänge inkl. **Gleichstand-Tie-Break** (letzter Durchgang), Rangliste
+mit Medaillen und Block-Übersicht. Wertung 1:1 nach offizieller Anleitung.
