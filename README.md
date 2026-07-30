@@ -8,6 +8,8 @@ Ausgeliefert statisch von einem einzigen `nginx:alpine`-Container, TLS/Routing �
 ```
 fun-apps/
 ├── docker-compose.yml     # nginx:alpine, container fun-apps-web, ./site:ro, Netz proxy-tier
+├── nginx/
+│   └── default.conf       # Auslieferung + Cache-Control: no-cache (siehe „Caching")
 └── site/
     ├── index.html         # Landing-Page (Kachel-Liste aller Apps)
     ├── styles.css
@@ -60,6 +62,33 @@ fun.sponholz.org {
 ```
 
 Nach Caddyfile-Änderung: `docker restart caddy` (Single-File-Bind-Mount, kein Reload-Watch).
+
+## Caching
+
+Ohne Build-Step gibt es keine gehashten Dateinamen – `app.js` heißt nach jedem Update
+weiter `app.js`. Lieferte nginx (wie anfangs) **gar kein** `Cache-Control`, raten Browser
+die Haltbarkeit heuristisch aus `Last-Modified` (Faustregel ~10 % des Dateialters) und
+zeigen stunden- bis tagelang alte Stände; auf Android (Brave/Chrome) half nur „Cache
+leeren" von Hand. `nginx/default.conf` setzt deshalb:
+
+```
+add_header Cache-Control "no-cache" always;
+```
+
+`no-cache` heißt **nicht** „nicht cachen", sondern „vor jeder Nutzung revalidieren":
+Der Browser schickt `If-None-Match` mit, nginx antwortet per ETag mit `304` (0 Byte
+Body). Updates sind damit sofort da, der Reload bleibt trotzdem günstig.
+
+Prüfen:
+
+```bash
+curl -sI https://fun.sponholz.org/qwixx/app.js | grep -i cache-control   # -> no-cache
+```
+
+Nach Änderung an `nginx/default.conf`: `docker restart fun-apps-web` (Ordner-Mount,
+kein Container-Neubau nötig). Für Clients, die **vor** dieser Umstellung schon eine
+Datei heuristisch gecacht haben, gilt der alte Cache-Eintrag noch bis zu seinem
+geratenen Ablauf – dort einmalig hart neu laden, danach greift die Revalidierung.
 
 ## App 1: Drinks – Kellner-System
 

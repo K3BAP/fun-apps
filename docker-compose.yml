@@ -8,6 +8,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./site:/usr/share/nginx/html:ro
+      # Ordner-Mount (keine Einzeldatei): Edits an der Conf brauchen nur ein
+      # docker restart, keinen Container-Neubau. Setzt Cache-Control: no-cache.
+      - ./nginx:/etc/nginx/conf.d:ro
     networks:
       - proxy-tier
 
