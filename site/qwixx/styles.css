@@ -84,6 +84,16 @@ h1, h2 { margin: 0; }
 .pl-del { width: 30px; height: 30px; border-radius: 50%; border: none; background: #ffffff14; color: var(--cream); font-size: .8rem; flex: 0 0 auto; }
 .setup-hint { color: var(--muted); font-size: .8rem; text-align: center; margin: 12px 0 0; }
 
+/* Spieloptionen (Punkte verdecken, Ende nur nach Regel) */
+.qx-toggle { display: flex; align-items: center; gap: 10px; margin-top: 14px; cursor: pointer; }
+.qx-toggle input { display: none; }
+.qx-track { position: relative; width: 44px; height: 26px; border-radius: 999px; background: #ffffff22; transition: background .18s; flex: 0 0 auto; }
+.qx-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--cream); transition: transform .18s; }
+.qx-toggle input:checked + .qx-track { background: var(--gold); }
+.qx-toggle input:checked + .qx-track .qx-thumb { transform: translateX(18px); }
+.qx-ttext { font-size: .86rem; color: var(--cream); }
+.qx-ttext small { display: block; color: var(--muted); font-size: .68rem; }
+
 .btn-start { margin-top: auto; width: 100%; padding: 17px; background: var(--gold); color: var(--ink); border-radius: 14px; font-size: 1.05rem; box-shadow: var(--shadow); font-weight: 700; }
 
 /* ==================== SPIEL ==================== */
@@ -130,6 +140,10 @@ h1, h2 { margin: 0; }
 .qx-green  { --rc: #4e9a55; }
 .qx-blue   { --rc: #4f86c6; }
 .qx-row.closed { box-shadow: 0 0 0 2px var(--rc) inset; }
+.qx-row.blocked { border-style: dashed; background: #ffffff08; }
+.qx-row.blocked .qx-lead { filter: grayscale(.7); opacity: .8; }
+.qx-row.blocked .qx-cell { opacity: .28; }
+.qx-row.blocked .qx-cell.on { opacity: .6; }
 
 .qx-lead {
   flex: 0 0 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
@@ -137,6 +151,7 @@ h1, h2 { margin: 0; }
 }
 .qx-dir { font-size: .65rem; line-height: 1; opacity: .85; }
 .qx-rowscore { font-size: .95rem; font-weight: 800; }
+.qx-rowscore.muted { font-size: .8rem; opacity: .75; }   /* Kreuz-Zahl statt Wertung */
 
 .qx-cells { flex: 1; min-width: 0; display: flex; gap: 3px; }
 .qx-cell {
@@ -162,11 +177,19 @@ h1, h2 { margin: 0; }
 .qx-cell:disabled { cursor: default; }
 
 .qx-lock {
-  flex: 0 0 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 30px; padding: 0; border-radius: 7px; display: flex; align-items: center; justify-content: center;
   font-size: .95rem; border: 1px dashed color-mix(in srgb, var(--rc) 60%, #ffffff22);
-  background: #ffffff08; filter: grayscale(1); opacity: .5;
+  background: #ffffff08; color: inherit; filter: grayscale(1); opacity: .5;
 }
 .qx-lock.on { background: var(--rc); filter: none; opacity: 1; border-style: solid; }
+/* von Mitspielern geschlossen: sichtbar dicht, aber nicht als eigener Abschluss */
+.qx-lock.ext {
+  filter: none; opacity: 1; border-style: solid;
+  border-color: color-mix(in srgb, var(--rc) 75%, #ffffff22);
+  background: color-mix(in srgb, var(--rc) 30%, #1c1a17);
+}
+.qx-lock:disabled { cursor: default; }
+.qx-note { margin: 10px 6px 0; font-size: .74rem; color: var(--muted); text-align: center; }
 
 /* Fehlwürfe */
 .qx-pens { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 6px 4px; }
@@ -184,6 +207,7 @@ h1, h2 { margin: 0; }
   font-size: .82rem; text-align: center;
 }
 .qx-eval { width: 100%; margin-top: 14px; }
+.qx-evalnote { margin-top: 8px; }
 
 /* ==================== SHEETS ==================== */
 .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 50; animation: fade .18s; }
@@ -204,6 +228,7 @@ h1, h2 { margin: 0; }
 .menu-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
 .menu-item { text-align: left; padding: 15px 14px; border-radius: 12px; border: 1px solid #ffffff1a; background: #ffffff10; color: var(--cream); font-size: 1rem; font-weight: 600; }
 .menu-item.danger { color: #e88a76; border-color: #b5533f44; }
+.menu-item:disabled { opacity: .45; cursor: default; }
 
 /* Übersicht-Tabelle */
 .block-body { overflow: auto; -webkit-overflow-scrolling: touch; }
@@ -242,6 +267,7 @@ h1, h2 { margin: 0; }
 .res-break { font-size: .72rem; color: var(--muted); margin-top: 2px; }
 .res-score { font-size: 1.5rem; font-weight: 800; color: var(--gold); }
 .res-block { width: 100%; margin-top: 16px; }
+.res-resume { width: 100%; margin-top: 10px; }
 .res-actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 18px; }
 
 /* ==================== Desktop ==================== */

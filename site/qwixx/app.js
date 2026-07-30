@@ -28,25 +28,42 @@
   var _pid = 0;
 
   function blankMarks() { return { red: newArr(), yellow: newArr(), green: newArr(), blue: newArr() }; }
+  function blankFlags() { return { red: false, yellow: false, green: false, blue: false }; }
   function newArr() { var a = []; for (var i = 0; i < 11; i++) a.push(false); return a; }
 
   function newPlayer(name) {
     return { id: newId(), name: name,
              marks: blankMarks(),
-             locked: { red: false, yellow: false, green: false, blue: false },
+             locked: blankFlags(),
              penalties: 0 };
   }
 
-  function blank() { return { phase: "setup", players: [], active: null, mode: "shared" }; }
+  function blank() {
+    return { phase: "setup", players: [], active: null, mode: "shared", extClosed: blankFlags(),
+             showScore: true, requireEnd: false };
+  }
+
+  // Reihen, die ein Mitspieler geschlossen hat: manuell markiert (extClosed)
+  // oder – im Gemeinsam-Modus – aus dem Block eines anderen Spielers abgeleitet.
+  function closedByOther(p, key) {
+    return state.players.some(function (o) { return o.id !== p.id && o.locked[key]; });
+  }
+  function rowBlocked(p, key) {
+    if (p.locked[key]) return false;
+    return state.extClosed[key] || closedByOther(p, key);
+  }
 
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(LS_KEY));
       if (s && s.players && s.phase) {
         if (s.mode !== "solo" && s.mode !== "shared") s.mode = "shared";
+        if (!s.extClosed) s.extClosed = blankFlags();
+        if (typeof s.showScore !== "boolean") s.showScore = true;
+        if (typeof s.requireEnd !== "boolean") s.requireEnd = false;
         s.players.forEach(function (p) {
           if (!p.marks) p.marks = blankMarks();
-          if (!p.locked) p.locked = { red: false, yellow: false, green: false, blue: false };
+          if (!p.locked) p.locked = blankFlags();
           if (typeof p.penalties !== "number") p.penalties = 0;
         });
         return s;
@@ -78,15 +95,22 @@
     ROWS.forEach(function (r) { t += rowScore(p.marks[r.key], p.locked[r.key]); });
     return t - 5 * p.penalties;
   }
+  function isRowClosed(key) {
+    return state.extClosed[key] || state.players.some(function (p) { return p.locked[key]; });
+  }
   function lockedRowCount() {
     var n = 0;
-    state.players.forEach(function (p) { ROWS.forEach(function (r) { if (p.locked[r.key]) n++; }); });
+    ROWS.forEach(function (r) { if (isRowClosed(r.key)) n++; });
     return n;
   }
   function gameOver() {
     var pen4 = state.players.some(function (p) { return p.penalties >= 4; });
     return pen4 || lockedRowCount() >= 2;
   }
+  // Live-Punkte während des Spiels – in der Auswertung immer sichtbar.
+  function scoresHidden() { return state.phase === "play" && !state.showScore; }
+  // Auswerten gesperrt, solange keine Endbedingung erfüllt ist?
+  function canEval() { return !state.requireEnd || gameOver(); }
   function activePlayer() {
     for (var i = 0; i < state.players.length; i++) if (state.players[i].id === state.active) return state.players[i];
     return state.players[0] || null;
@@ -129,6 +153,25 @@
     else renderSetupShared(v);
   }
 
+  // Ein Schalter (Label + Kurzbeschreibung) für die Spieloptionen
+  function optToggle(title, sub, checked, onChange) {
+    var lab = el("label", "qx-toggle");
+    lab.innerHTML = '<span class="qx-track"><span class="qx-thumb"></span></span>' +
+      '<span class="qx-ttext">' + escapeHtml(title) + '<small>' + escapeHtml(sub) + '</small></span>';
+    var cb = el("input"); cb.type = "checkbox"; cb.checked = !!checked;
+    lab.insertBefore(cb, lab.firstChild);
+    cb.addEventListener("change", function () { onChange(cb.checked); save(); });
+    return lab;
+  }
+  function renderOptions(card) {
+    card.appendChild(optToggle("Punkte live anzeigen",
+      "Aus: Punktestand bleibt bis zur Auswertung verdeckt",
+      state.showScore, function (on) { state.showScore = on; }));
+    card.appendChild(optToggle("Ende nur nach Regel",
+      "Auswerten erst, wenn 2 Reihen zu sind oder 4 Fehlwürfe stehen",
+      state.requireEnd, function (on) { state.requireEnd = on; }));
+  }
+
   function renderSetupSolo(v) {
     var card = el("section", "setup-card");
     card.appendChild(el("label", "solo-label", "Dein Name"));
@@ -136,6 +179,7 @@
     input.value = (state.players[0] && state.players[0].name) || "";
     card.appendChild(input);
     card.appendChild(el("p", "setup-hint", "Auf diesem Gerät spielst nur du. Alle Mitspieler öffnen dieselbe Seite auf ihrem eigenen Gerät und wählen ebenfalls „Einzeln“."));
+    renderOptions(card);
     v.appendChild(card);
 
     var startBtn = el("button", "btn btn-start", "Losspielen");
@@ -144,6 +188,7 @@
     function start() {
       var p = newPlayer(input.value.trim() || "Ich");
       state.players = [p]; state.active = p.id; state.phase = "play";
+      state.extClosed = blankFlags();
       closeSheet(); save(); render();
     }
     startBtn.addEventListener("click", start);
@@ -162,6 +207,7 @@
     card.appendChild(list);
     var hint = el("p", "setup-hint");
     card.appendChild(hint);
+    renderOptions(card);
     v.appendChild(card);
 
     var startBtn = el("button", "btn btn-start", "Spiel starten");
@@ -189,7 +235,8 @@
     startBtn.addEventListener("click", function () {
       if (state.players.length < MIN_PLAYERS) return;
       resetSheets();
-      state.players.forEach(function (p) { p.marks = blankMarks(); p.locked = { red: false, yellow: false, green: false, blue: false }; p.penalties = 0; });
+      state.players.forEach(function (p) { p.marks = blankMarks(); p.locked = blankFlags(); p.penalties = 0; });
+      state.extClosed = blankFlags();
       state.phase = "play"; state.active = state.players[0].id;
       save(); render();
     });
@@ -259,10 +306,11 @@
     var ap = activePlayer();
 
     // Kopf
+    var hide = scoresHidden();
     var head = el("header", "play-head");
     head.innerHTML =
       '<div class="ph-brand"><span class="ph-dice">🎲</span><b>Qwixx</b></div>' +
-      '<div class="ph-meta"><span class="ph-round">' + playerScore(ap) + ' Pkt</span>' +
+      '<div class="ph-meta"><span class="ph-round">' + (hide ? '🙈 verdeckt' : playerScore(ap) + ' Pkt') + '</span>' +
       '<span class="ph-prog">' + escapeHtml(ap.name) + '</span></div>';
     var menuBtn = el("button", "ph-menu", "⋯"); menuBtn.setAttribute("aria-label", "Menü");
     menuBtn.addEventListener("click", function () { renderMenu(); openSheet($("menuSheet")); });
@@ -272,12 +320,12 @@
     // Spielerauswahl (Chips) – nur im Gemeinsam-Modus
     if (!isSolo()) {
       var stand = el("div", "standings");
-      var lead = leaderId();
+      var lead = hide ? null : leaderId();
       state.players.forEach(function (p, idx) {
         var chip = el("button", "stand-chip" + (p.id === lead ? " leader" : "") + (p.id === state.active ? " active" : ""));
         chip.style.setProperty("--accent", accentFor(idx));
         chip.innerHTML = '<span class="stand-name">' + (p.id === lead ? "👑 " : "") + escapeHtml(p.name) + '</span>' +
-          '<span class="stand-score">' + playerScore(p) + '</span>';
+          '<span class="stand-score">' + (hide ? '·' : playerScore(p)) + '</span>';
         chip.addEventListener("click", function () { state.active = p.id; save(); render(); });
         stand.appendChild(chip);
       });
@@ -298,13 +346,17 @@
     ROWS.forEach(function (row) {
       var arr = p.marks[row.key];
       var isLocked = p.locked[row.key];
+      var byOther = closedByOther(p, row.key);       // Block eines Mitspielers auf diesem Gerät
+      var blocked = rowBlocked(p, row.key);
       var mm = maxMarked(arr);
       var cnt = countMarks(arr);
 
-      var rowEl = el("div", "qx-row qx-" + row.key + (isLocked ? " closed" : ""));
+      var rowEl = el("div", "qx-row qx-" + row.key + (isLocked ? " closed" : "") + (blocked ? " blocked" : ""));
       var lead = el("div", "qx-lead");
+      // Bei verdeckten Punkten steht hier die Zahl der Kreuze statt der Wertung
       lead.innerHTML = '<span class="qx-dir">' + (row.asc ? "▲" : "▼") + '</span>' +
-        '<span class="qx-rowscore">' + rowScore(arr, isLocked) + '</span>';
+        '<span class="qx-rowscore' + (scoresHidden() ? ' muted' : '') + '">' +
+        (scoresHidden() ? cnt + "×" : rowScore(arr, isLocked)) + '</span>';
       rowEl.appendChild(lead);
 
       var cells = el("div", "qx-cells");
@@ -312,7 +364,7 @@
         (function (i) {
           var marked = arr[i];
           var isLast = i === LAST;
-          var available = !marked && i > mm && (!isLast || cnt >= CLOSE_MIN);
+          var available = !marked && !blocked && i > mm && (!isLast || cnt >= CLOSE_MIN);
           var skipped = !marked && i < mm;                       // übersprungen → gesperrt
           var lockOut = !marked && isLast && cnt < CLOSE_MIN;    // letzte Zahl noch nicht freigeschaltet
 
@@ -331,6 +383,7 @@
               arr[i] = false;
               if (isLast) p.locked[row.key] = false;
             } else {
+              if (blocked) return;                  // Reihe hat schon jemand anders zugemacht
               if (i <= mm) return;                  // links davon gesperrt
               if (isLast && cnt < CLOSE_MIN) return;
               arr[i] = true;
@@ -342,13 +395,32 @@
         })(i);
       }
 
-      // Schloss-Feld
-      var lock = el("div", "qx-lock" + (isLocked ? " on" : ""), "🔒");
+      // Schloss-Feld: eigener Abschluss (on) oder von Mitspielern geschlossen (ext)
+      var lock = el("button", "qx-lock" + (isLocked ? " on" : "") + (blocked ? " ext" : ""), "🔒");
+      lock.disabled = isLocked || byOther;
+      lock.setAttribute("aria-label",
+        isLocked ? (row.label + ": von dir geschlossen")
+                 : byOther ? (row.label + ": von einem Mitspieler geschlossen")
+                 : state.extClosed[row.key] ? (row.label + " wieder freigeben")
+                 : (row.label + " sperren – ein Mitspieler hat die Reihe geschlossen"));
+      lock.title = lock.getAttribute("aria-label");
+      lock.addEventListener("click", function () {
+        if (isLocked || byOther) return;            // eigener bzw. abgeleiteter Abschluss
+        state.extClosed[row.key] = !state.extClosed[row.key];
+        save(); render();
+      });
       cells.appendChild(lock);
 
       rowEl.appendChild(cells);
       wrap.appendChild(rowEl);
     });
+
+    // Hinweiszeile: welche Reihen sind für diesen Spieler dicht?
+    var blockedLabels = ROWS.filter(function (r) { return rowBlocked(p, r.key); })
+                            .map(function (r) { return r.label; });
+    wrap.appendChild(el("p", "qx-note", blockedLabels.length
+      ? ("Gesperrt: " + blockedLabels.join(" · ") + " – hier geht nichts mehr rein.")
+      : "Hat ein Mitspieler eine Reihe zugemacht? Schloss antippen – dann ist sie hier gesperrt."));
 
     // Fehlwürfe
     var penWrap = el("div", "qx-pens");
@@ -378,8 +450,16 @@
       wrap.appendChild(banner);
     }
     var evalBtn = el("button", "btn btn-primary qx-eval", "Auswerten");
-    evalBtn.addEventListener("click", function () { state.phase = "result"; save(); render(); });
+    evalBtn.disabled = !canEval();
+    evalBtn.addEventListener("click", function () {
+      if (!canEval()) return;
+      state.phase = "result"; save(); render();
+    });
     wrap.appendChild(evalBtn);
+    if (!canEval()) {
+      wrap.appendChild(el("p", "qx-note qx-evalnote",
+        "Auswerten ist gesperrt, bis das Spielende erreicht ist: zwei geschlossene Reihen oder 4 Fehlwürfe."));
+    }
 
     return wrap;
   }
@@ -388,6 +468,7 @@
   function renderBlock() {
     var body = $("blockBody");
     body.innerHTML = "";
+    var hide = scoresHidden();
     var table = el("table", "block-table");
 
     var thead = el("thead");
@@ -396,7 +477,8 @@
     state.players.forEach(function (p, idx) {
       var th = el("th", "bp-col");
       th.style.setProperty("--accent", accentFor(idx));
-      th.innerHTML = '<div class="bp-name">' + escapeHtml(p.name) + '</div><div class="bp-total">' + playerScore(p) + '</div>';
+      th.innerHTML = '<div class="bp-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="bp-total">' + (hide ? '·' : playerScore(p)) + '</div>';
       htr.appendChild(th);
     });
     thead.appendChild(htr); table.appendChild(thead);
@@ -404,11 +486,11 @@
     var tbody = el("tbody");
     ROWS.forEach(function (row) {
       var tr = el("tr");
-      tr.appendChild(el("td", "rd-col", row.label));
+      tr.appendChild(el("td", "rd-col", row.label + (isRowClosed(row.key) ? " 🔒" : "")));
       state.players.forEach(function (p) {
         var arr = p.marks[row.key], lk = p.locked[row.key];
         var td = el("td", "bp-cell");
-        td.innerHTML = '<span class="bp-bt">' + rowScore(arr, lk) + (lk ? ' 🔒' : '') + '</span>' +
+        td.innerHTML = '<span class="bp-bt">' + (hide ? '·' : rowScore(arr, lk)) + (lk ? ' 🔒' : '') + '</span>' +
           '<span class="bp-run">' + countMarks(arr) + ' Kreuze</span>';
         tr.appendChild(td);
       });
@@ -435,12 +517,24 @@
     box.innerHTML = "";
     var block = el("button", "menu-item", isSolo() ? "📋 Reihen-Übersicht" : "📋 Übersicht aller Spieler");
     block.addEventListener("click", function () { closeSheet(); renderBlock(); openSheet($("blockSheet")); });
-    var evalItem = el("button", "menu-item", "🏁 Spiel auswerten");
-    evalItem.addEventListener("click", function () { closeSheet(); state.phase = "result"; save(); render(); });
+    var evalItem = el("button", "menu-item", canEval()
+      ? "🏁 Spiel auswerten"
+      : "🔒 Auswerten – erst am Spielende");
+    evalItem.disabled = !canEval();
+    evalItem.addEventListener("click", function () {
+      if (!canEval()) return;
+      closeSheet(); state.phase = "result"; save(); render();
+    });
     var setup = el("button", "menu-item", "Zurück zur Spielerauswahl");
     setup.addEventListener("click", function () { closeSheet(); state.phase = "setup"; save(); render(); });
     var reset = el("button", "menu-item danger", "Spiel zurücksetzen");
-    reset.addEventListener("click", function () { closeSheet(); state = blank(); save(); render(); });
+    reset.addEventListener("click", function () {
+      closeSheet();
+      var opts = { showScore: state.showScore, requireEnd: state.requireEnd, mode: state.mode };
+      state = blank();
+      state.showScore = opts.showScore; state.requireEnd = opts.requireEnd; state.mode = opts.mode;
+      save(); render();
+    });
     box.appendChild(block); box.appendChild(evalItem); box.appendChild(setup); box.appendChild(reset);
   }
 
@@ -448,6 +542,19 @@
   //  ERGEBNIS
   // ==================================================================
   function medal(rank) { return rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "#" + rank; }
+
+  // Versehentlich ausgewertet? Zurück in den Block – alle Kreuze bleiben stehen.
+  function resumeButton() {
+    var btn = el("button", "btn btn-ghost res-resume", "↩︎ Weiterspielen");
+    btn.title = "Zurück zum Spielblock – nichts wird zurückgesetzt";
+    btn.addEventListener("click", function () {
+      state.phase = "play";
+      var ap = activePlayer();
+      if (ap) state.active = ap.id;          // falls die Auswahl verloren ging
+      save(); render();
+    });
+    return btn;
+  }
 
   // Einzelmodus: persönliche Ergebnis-Karte statt Rangliste
   function renderResultSolo() {
@@ -492,11 +599,14 @@
     list.appendChild(trow);
     v.appendChild(list);
 
+    v.appendChild(resumeButton());
+
     var actions = el("div", "res-actions");
     var again = el("button", "btn btn-primary", "Nochmal");
     var neu = el("button", "btn btn-ghost", "Zurück zum Start");
     again.addEventListener("click", function () {
-      p.marks = blankMarks(); p.locked = { red: false, yellow: false, green: false, blue: false }; p.penalties = 0;
+      p.marks = blankMarks(); p.locked = blankFlags(); p.penalties = 0;
+      state.extClosed = blankFlags();
       state.phase = "play"; save(); render();
     });
     neu.addEventListener("click", function () { state.phase = "setup"; save(); render(); });
@@ -538,12 +648,14 @@
     var blockBtn = el("button", "btn btn-ghost res-block", "📋 Übersicht aller Reihen");
     blockBtn.addEventListener("click", function () { renderBlock(); openSheet($("blockSheet")); });
     v.appendChild(blockBtn);
+    v.appendChild(resumeButton());
 
     var actions = el("div", "res-actions");
     var again = el("button", "btn btn-primary", "Nochmal · gleiche Spieler");
     var neu = el("button", "btn btn-ghost", "Neues Spiel");
     again.addEventListener("click", function () {
-      state.players.forEach(function (p) { p.marks = blankMarks(); p.locked = { red: false, yellow: false, green: false, blue: false }; p.penalties = 0; });
+      state.players.forEach(function (p) { p.marks = blankMarks(); p.locked = blankFlags(); p.penalties = 0; });
+      state.extClosed = blankFlags();
       state.phase = "play"; state.active = state.players[0].id;
       save(); render();
     });

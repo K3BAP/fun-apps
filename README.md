@@ -24,10 +24,14 @@ fun-apps/
     │   ├── index.html
     │   ├── styles.css
     │   └── app.js         # Setup/Drag&Drop-, Runden- und Ergebnis-Logik
-    └── beet/              # App 4: „Ab ins Beet"-Zähler (Beet/Bonus/Tier, 3 Durchgänge)
+    ├── beet/              # App 4: „Ab ins Beet"-Zähler (Beet/Bonus/Tier, 3 Durchgänge)
+    │   ├── index.html
+    │   ├── styles.css     # eigenes verspieltes Garten-Theme
+    │   └── app.js         # Setup/Drag&Drop-, Phasen- und Ergebnis-Logik
+    └── qwixx/             # App 5: Qwixx-Spielblock (4 Farbreihen, Schlösser, Fehlwürfe)
         ├── index.html
-        ├── styles.css     # eigenes verspieltes Garten-Theme
-        └── app.js         # Setup/Drag&Drop-, Phasen- und Ergebnis-Logik
+        ├── styles.css
+        └── app.js         # Setup/Optionen-, Block- und Ergebnis-Logik
 ```
 
 Kein Build-Step, keine externen CDN-Abhängigkeiten. Weil nginx echte Unterordner
@@ -110,3 +114,33 @@ Grün + Gemüse-Farben). **2–4 Gärtner**, **3 Durchgänge** mit je 3 Wertungs
 
 Endstand über 3 Durchgänge inkl. **Gleichstand-Tie-Break** (letzter Durchgang), Rangliste
 mit Medaillen und Block-Übersicht. Wertung 1:1 nach offizieller Anleitung.
+
+## App 5: Qwixx – Spielblock
+
+Digitaler Spielblock zum Würfelspiel *Qwixx*, mobile-first, kein Backend (Spielstand in
+`localStorage`). **2–5 Spieler**, zwei Betriebsarten: **Gemeinsam** (alle Blöcke auf einem
+Gerät, Umschalten über Spieler-Chips) oder **Einzeln** (jeder öffnet die Seite auf seinem
+eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
+
+1. **Setup:** Modus wählen, Spieler anlegen, Reihenfolge per **Drag & Drop**; dazu zwei
+   Optionen (gelten für beide Modi, überleben „Spiel zurücksetzen"):
+   - **Punkte live anzeigen** (Standard: an) – aus bleibt der Punktestand während des
+     Spiels verdeckt: Kopfzeile, Spieler-Chips inkl. Krone des Führenden und die
+     Übersichts-Tabelle zeigen `·`, je Reihe steht die Zahl der Kreuze (`3×`) statt der
+     Wertung. In der Auswertung sind die Punkte immer sichtbar.
+   - **Ende nur nach Regel** (Standard: aus) – an ist „Auswerten" (Button **und**
+     Menüpunkt) gesperrt, bis eine echte Endbedingung erfüllt ist.
+2. **Spiel:** vier Farbreihen à 11 Zahlen – Rot/Gelb aufsteigend 2→12, Grün/Blau
+   absteigend 12→2. Regelkonform geführt: links liegende Zahlen sind nach einem Kreuz
+   gesperrt, die **letzte Zahl** lässt sich erst ab **5 Kreuzen** in der Reihe ankreuzen
+   und schließt die Reihe (Schloss zählt als zusätzliches Kreuz). Das rechteste Kreuz
+   lässt sich zum Korrigieren wieder lösen. Schließt ein **Mitspieler** eine Reihe, wird
+   sie per Schloss-Feld gesperrt (im Gemeinsam-Modus automatisch aus den anderen
+   Blöcken abgeleitet). Vier **Fehlwurf**-Kästchen à −5. Wertung je Reihe über die
+   **Dreieckszahlen** (1, 3, 6, 10 … 78), Summe minus Fehlwürfe.
+3. **Spielende:** erreicht, sobald **zwei Reihen geschlossen** sind oder ein Spieler
+   **4 Fehlwürfe** hat – der Block zeigt dann ein Hinweis-Banner.
+4. **Ergebnis:** Rangliste mit Medaillen (bzw. persönliche Karte im Einzelmodus),
+   Aufschlüsselung je Reihe, „📋 Übersicht aller Reihen", **„↩︎ Weiterspielen"** (zurück
+   in den Block, falls versehentlich ausgewertet – nichts wird zurückgesetzt) sowie
+   „Nochmal (gleiche Spieler)" oder „Neues Spiel".
