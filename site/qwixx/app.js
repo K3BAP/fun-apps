@@ -40,7 +40,7 @@
 
   function blank() {
     return { phase: "setup", players: [], active: null, mode: "shared", extClosed: blankFlags(),
-             showScore: false, requireEnd: true };
+             showScore: false, requireEnd: true, keepAwake: true };
   }
 
   // Reihen, die ein Mitspieler geschlossen hat: manuell markiert (extClosed)
@@ -61,6 +61,7 @@
         if (!s.extClosed) s.extClosed = blankFlags();
         if (typeof s.showScore !== "boolean") s.showScore = false;
         if (typeof s.requireEnd !== "boolean") s.requireEnd = true;
+        if (typeof s.keepAwake !== "boolean") s.keepAwake = true;
         s.players.forEach(function (p) {
           if (!p.marks) p.marks = blankMarks();
           if (!p.locked) p.locked = blankFlags();
@@ -122,6 +123,29 @@
     return best;
   }
 
+  // ---------- Bildschirm wachhalten (Screen Wake Lock API) ----------
+  // Nur während des Spiels: der Block liegt oft minutenlang unberührt auf dem
+  // Tisch, da soll sich das Display nicht abschalten. Das System gibt den Lock
+  // von sich aus frei, sobald der Tab in den Hintergrund geht – deshalb wird er
+  // bei visibilitychange neu angefordert.
+  var wakeLock = null;
+  function wakeSupported() { return typeof navigator !== "undefined" && "wakeLock" in navigator; }
+  function wakeWanted() { return state.phase === "play" && state.keepAwake && wakeSupported(); }
+  function updateWake() { if (wakeWanted()) requestWake(); else releaseWake(); }
+  function requestWake() {
+    if (wakeLock || document.visibilityState !== "visible") return;
+    navigator.wakeLock.request("screen").then(function (lock) {
+      if (!wakeWanted()) { lock.release(); return; }   // Phase hat inzwischen gewechselt
+      wakeLock = lock;
+      lock.addEventListener("release", function () { if (wakeLock === lock) wakeLock = null; });
+    }).catch(function () { /* z. B. Energiesparmodus – kein Grund für eine Fehlermeldung */ });
+  }
+  function releaseWake() {
+    if (!wakeLock) return;
+    var lock = wakeLock; wakeLock = null;
+    try { lock.release(); } catch (e) {}
+  }
+
   // ---------- Sheets ----------
   var scrim, openSheetEl = null;
   function openSheet(s) { if (openSheetEl) openSheetEl.hidden = true; openSheetEl = s; s.hidden = false; scrim.hidden = false; }
@@ -160,7 +184,7 @@
       '<span class="qx-ttext">' + escapeHtml(title) + '<small>' + escapeHtml(sub) + '</small></span>';
     var cb = el("input"); cb.type = "checkbox"; cb.checked = !!checked;
     lab.insertBefore(cb, lab.firstChild);
-    cb.addEventListener("change", function () { onChange(cb.checked); save(); });
+    cb.addEventListener("change", function () { onChange(cb.checked); save(); updateWake(); });
     return lab;
   }
   function renderOptions(card) {
@@ -170,6 +194,14 @@
     card.appendChild(optToggle("Ende nur nach Regel",
       "Auswerten erst, wenn 2 Reihen zu sind oder 4 Fehlwürfe stehen",
       state.requireEnd, function (on) { state.requireEnd = on; }));
+
+    var ok = wakeSupported();
+    var wake = optToggle("Bildschirm anlassen",
+      ok ? "Display sperrt sich während des Spiels nicht von selbst"
+         : "Von diesem Browser nicht unterstützt",
+      ok && state.keepAwake, function (on) { state.keepAwake = on; });
+    if (!ok) { wake.classList.add("off"); wake.querySelector("input").disabled = true; }
+    card.appendChild(wake);
   }
 
   function renderSetupSolo(v) {
@@ -530,9 +562,11 @@
     var reset = el("button", "menu-item danger", "Spiel zurücksetzen");
     reset.addEventListener("click", function () {
       closeSheet();
-      var opts = { showScore: state.showScore, requireEnd: state.requireEnd, mode: state.mode };
+      var opts = { showScore: state.showScore, requireEnd: state.requireEnd,
+                   keepAwake: state.keepAwake, mode: state.mode };
       state = blank();
-      state.showScore = opts.showScore; state.requireEnd = opts.requireEnd; state.mode = opts.mode;
+      state.showScore = opts.showScore; state.requireEnd = opts.requireEnd;
+      state.keepAwake = opts.keepAwake; state.mode = opts.mode;
       save(); render();
     });
     box.appendChild(block); box.appendChild(evalItem); box.appendChild(setup); box.appendChild(reset);
@@ -680,6 +714,7 @@
     else renderResult();
     if (openSheetEl && openSheetEl.id !== "blockSheet") closeSheet();
     if (changedScroll) window.scrollTo(0, 0);
+    updateWake();
   }
 
   function init() {
@@ -687,6 +722,10 @@
     scrim.addEventListener("click", closeSheet);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
     each(document.querySelectorAll("[data-close]"), function (b) { b.addEventListener("click", closeSheet); });
+    // Der Lock geht beim Wegschalten verloren -> beim Zurückkommen neu holen
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") updateWake(); else releaseWake();
+    });
     render();
   }
 

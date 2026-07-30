@@ -151,7 +151,7 @@ Digitaler Spielblock zum Würfelspiel *Qwixx*, mobile-first, kein Backend (Spiel
 Gerät, Umschalten über Spieler-Chips) oder **Einzeln** (jeder öffnet die Seite auf seinem
 eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
 
-1. **Setup:** Modus wählen, Spieler anlegen, Reihenfolge per **Drag & Drop**; dazu zwei
+1. **Setup:** Modus wählen, Spieler anlegen, Reihenfolge per **Drag & Drop**; dazu drei
    Optionen (gelten für beide Modi, überleben „Spiel zurücksetzen"):
    - **Punkte live anzeigen** (Standard: aus) – aus bleibt der Punktestand während des
      Spiels verdeckt: Kopfzeile, Spieler-Chips inkl. Krone des Führenden und die
@@ -159,6 +159,11 @@ eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
      Wertung. In der Auswertung sind die Punkte immer sichtbar.
    - **Ende nur nach Regel** (Standard: an) – an ist „Auswerten" (Button **und**
      Menüpunkt) gesperrt, bis eine echte Endbedingung erfüllt ist.
+   - **Bildschirm anlassen** (Standard: an) – hält per **Screen Wake Lock API** das
+     Display wach, solange die Spiel-Ansicht offen ist (nicht im Setup/Ergebnis). Der
+     Lock wird beim Wegschalten des Tabs vom System freigegeben und bei der Rückkehr
+     automatisch neu angefordert. Browser ohne Unterstützung zeigen den Schalter
+     ausgegraut; HTTPS ist Voraussetzung (über Caddy gegeben).
 2. **Spiel:** vier Farbreihen à 11 Zahlen – Rot/Gelb aufsteigend 2→12, Grün/Blau
    absteigend 12→2. Regelkonform geführt: links liegende Zahlen sind nach einem Kreuz
    gesperrt, die **letzte Zahl** lässt sich erst ab **5 Kreuzen** in der Reihe ankreuzen
