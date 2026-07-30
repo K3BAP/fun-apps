@@ -145,6 +145,17 @@
     var lock = wakeLock; wakeLock = null;
     try { lock.release(); } catch (e) {}
   }
+  // Gleiche Option wie im Setup, nur mitten im Spiel erreichbar
+  function wakeMenuItem() {
+    var ok = wakeSupported();
+    var item = el("button", "menu-item",
+      (ok && state.keepAwake ? "✓ " : "○ ") + "Bildschirm anlassen" + (ok ? "" : " · nicht unterstützt"));
+    item.disabled = !ok;
+    item.addEventListener("click", function () {
+      state.keepAwake = !state.keepAwake; save(); closeSheet(); updateWake();
+    });
+    return item;
+  }
 
   // ---------- Sheets ----------
   var scrim, openSheetEl = null;
@@ -569,7 +580,8 @@
       state.keepAwake = opts.keepAwake; state.mode = opts.mode;
       save(); render();
     });
-    box.appendChild(block); box.appendChild(evalItem); box.appendChild(setup); box.appendChild(reset);
+    box.appendChild(block); box.appendChild(evalItem); box.appendChild(wakeMenuItem());
+    box.appendChild(setup); box.appendChild(reset);
   }
 
   // ==================================================================

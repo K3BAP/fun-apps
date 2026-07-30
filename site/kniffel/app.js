@@ -38,11 +38,14 @@
   var _lastPhase = null;
   var _pid = 0;
 
-  function blank() { return { phase: "setup", players: [], scores: {} }; }
+  function blank() { return { phase: "setup", players: [], scores: {}, keepAwake: true }; }
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(LS_KEY));
-      if (s && s.players && s.scores && s.phase) return s;
+      if (s && s.players && s.scores && s.phase) {
+        if (typeof s.keepAwake !== "boolean") s.keepAwake = true;
+        return s;
+      }
     } catch (e) {}
     return blank();
   }
@@ -87,6 +90,38 @@
     var best = -1, min = Infinity;
     state.players.forEach(function (p, i) { var f = filledCount(p.id); if (f < min) { min = f; best = i; } });
     return best;
+  }
+
+  // ---------- Bildschirm wachhalten (Screen Wake Lock API) ----------
+  // Nur während des Spiels: der Block liegt oft minutenlang unberührt auf dem
+  // Tisch, da soll sich das Display nicht abschalten. Das System gibt den Lock
+  // von sich aus frei, sobald der Tab in den Hintergrund geht – deshalb wird er
+  // bei visibilitychange neu angefordert. Umschaltbar über das ⋯-Menü.
+  var wakeLock = null;
+  function wakeSupported() { return typeof navigator !== "undefined" && "wakeLock" in navigator; }
+  function wakeWanted() { return state.phase === "play" && state.keepAwake && wakeSupported(); }
+  function updateWake() { if (wakeWanted()) requestWake(); else releaseWake(); }
+  function requestWake() {
+    if (wakeLock || document.visibilityState !== "visible") return;
+    navigator.wakeLock.request("screen").then(function (lock) {
+      if (!wakeWanted()) { lock.release(); return; }   // Phase hat inzwischen gewechselt
+      wakeLock = lock;
+      lock.addEventListener("release", function () { if (wakeLock === lock) wakeLock = null; });
+    }).catch(function () { /* z. B. Energiesparmodus – kein Grund für eine Fehlermeldung */ });
+  }
+  function releaseWake() {
+    if (!wakeLock) return;
+    var lock = wakeLock; wakeLock = null;
+    try { lock.release(); } catch (e) {}
+  }
+  // Der Menüpunkt steht statisch im HTML – Beschriftung beim Öffnen nachziehen.
+  function syncWakeItem() {
+    var item = $("menuWake");
+    if (!item) return;
+    var ok = wakeSupported();
+    item.textContent = (ok && state.keepAwake ? "✓ " : "○ ") + "Bildschirm anlassen" +
+                       (ok ? "" : " · nicht unterstützt");
+    item.disabled = !ok;
   }
 
   // ---------- Sheets ----------
@@ -222,7 +257,7 @@
       '<div class="ph-meta"><span class="ph-round">Runde ' + round + ' / ' + TOTAL_FIELDS + '</span>' +
       '<span class="ph-prog">' + totalFilled() + ' / ' + maxFields + ' Felder</span></div>';
     var menuBtn = el("button", "ph-menu", "⋯"); menuBtn.setAttribute("aria-label", "Menü");
-    menuBtn.addEventListener("click", function () { openSheet($("menuSheet")); });
+    menuBtn.addEventListener("click", function () { syncWakeItem(); openSheet($("menuSheet")); });
     head.appendChild(menuBtn);
     v.appendChild(head);
 
@@ -437,6 +472,7 @@
     else renderResult();
     if (openSheetEl) closeSheet();
     if (changed) window.scrollTo(0, 0);
+    updateWake();
   }
 
   function init() {
@@ -450,7 +486,17 @@
       if (!act) return;
       closeSheet();
       if (act === "setup") { state.phase = "setup"; save(); render(); }
-      else if (act === "reset") { state = blank(); save(); render(); }
+      else if (act === "wake") { state.keepAwake = !state.keepAwake; save(); updateWake(); }
+      else if (act === "reset") {
+        var ka = state.keepAwake;
+        state = blank(); state.keepAwake = ka;   // Einstellung überlebt den Reset
+        save(); render();
+      }
+    });
+
+    // Der Lock geht beim Wegschalten verloren -> beim Zurückkommen neu holen
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") updateWake(); else releaseWake();
     });
 
     render();

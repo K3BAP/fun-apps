@@ -16,7 +16,7 @@
 
   function blank() {
     return { phase: "setup", players: [], enforce: true, round: 1, step: "bid",
-             draftBids: {}, draftTricks: {}, rounds: [] };
+             draftBids: {}, draftTricks: {}, rounds: [], keepAwake: true };
   }
   function load() {
     try {
@@ -25,6 +25,7 @@
         if (!s.draftBids) s.draftBids = {};
         if (!s.draftTricks) s.draftTricks = {};
         if (typeof s.enforce !== "boolean") s.enforce = true;
+        if (typeof s.keepAwake !== "boolean") s.keepAwake = true;
         return s;
       }
     } catch (e) {}
@@ -67,6 +68,39 @@
   function trickOf(pid) { var v = state.draftTricks[pid]; return v == null ? 0 : v; }
   function sumBids()   { var s = 0; state.players.forEach(function (p) { s += bidOf(p.id); });   return s; }
   function sumTricks() { var s = 0; state.players.forEach(function (p) { s += trickOf(p.id); }); return s; }
+
+  // ---------- Bildschirm wachhalten (Screen Wake Lock API) ----------
+  // Nur während des Spiels: der Block liegt oft minutenlang unberührt auf dem
+  // Tisch, da soll sich das Display nicht abschalten. Das System gibt den Lock
+  // von sich aus frei, sobald der Tab in den Hintergrund geht – deshalb wird er
+  // bei visibilitychange neu angefordert. Umschaltbar über das ⋯-Menü.
+  var wakeLock = null;
+  function wakeSupported() { return typeof navigator !== "undefined" && "wakeLock" in navigator; }
+  function wakeWanted() { return state.phase === "play" && state.keepAwake && wakeSupported(); }
+  function updateWake() { if (wakeWanted()) requestWake(); else releaseWake(); }
+  function requestWake() {
+    if (wakeLock || document.visibilityState !== "visible") return;
+    navigator.wakeLock.request("screen").then(function (lock) {
+      if (!wakeWanted()) { lock.release(); return; }   // Phase hat inzwischen gewechselt
+      wakeLock = lock;
+      lock.addEventListener("release", function () { if (wakeLock === lock) wakeLock = null; });
+    }).catch(function () { /* z. B. Energiesparmodus – kein Grund für eine Fehlermeldung */ });
+  }
+  function releaseWake() {
+    if (!wakeLock) return;
+    var lock = wakeLock; wakeLock = null;
+    try { lock.release(); } catch (e) {}
+  }
+  function wakeMenuItem() {
+    var ok = wakeSupported();
+    var item = el("button", "menu-item",
+      (ok && state.keepAwake ? "✓ " : "○ ") + "Bildschirm anlassen" + (ok ? "" : " · nicht unterstützt"));
+    item.disabled = !ok;
+    item.addEventListener("click", function () {
+      state.keepAwake = !state.keepAwake; save(); closeSheet(); updateWake();
+    });
+    return item;
+  }
 
   // ---------- Sheets ----------
   var scrim, openSheetEl = null;
@@ -389,8 +423,14 @@
     var setup = el("button", "menu-item", "Zurück zur Spielerauswahl");
     setup.addEventListener("click", function () { closeSheet(); state.phase = "setup"; save(); render(); });
     var reset = el("button", "menu-item danger", "Spiel zurücksetzen");
-    reset.addEventListener("click", function () { closeSheet(); state = blank(); save(); render(); });
-    box.appendChild(block); box.appendChild(toggle); box.appendChild(setup); box.appendChild(reset);
+    reset.addEventListener("click", function () {
+      closeSheet();
+      var ka = state.keepAwake;
+      state = blank(); state.keepAwake = ka;   // Einstellung überlebt den Reset
+      save(); render();
+    });
+    box.appendChild(block); box.appendChild(toggle); box.appendChild(wakeMenuItem());
+    box.appendChild(setup); box.appendChild(reset);
   }
 
   // ==================================================================
@@ -457,6 +497,7 @@
     else renderResult();
     if (openSheetEl && openSheetEl.id !== "blockSheet") closeSheet();
     if (changedScroll) window.scrollTo(0, 0);
+    updateWake();
   }
 
   function init() {
@@ -464,6 +505,10 @@
     scrim.addEventListener("click", closeSheet);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
     each(document.querySelectorAll("[data-close]"), function (b) { b.addEventListener("click", closeSheet); });
+    // Der Lock geht beim Wegschalten verloren -> beim Zurückkommen neu holen
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") updateWake(); else releaseWake();
+    });
     render();
   }
 

@@ -90,6 +90,27 @@ kein Container-Neubau nötig). Für Clients, die **vor** dieser Umstellung schon
 Datei heuristisch gecacht haben, gilt der alte Cache-Eintrag noch bis zu seinem
 geratenen Ablauf – dort einmalig hart neu laden, danach greift die Revalidierung.
 
+## Bildschirm wachhalten
+
+Alle vier Spielblöcke (Kniffel, Wizard, Beet, Qwixx – nicht Drinks) halten über die
+**Screen Wake Lock API** das Display wach, solange die **Spiel-Ansicht** offen ist;
+Setup und Ergebnis geben den Lock wieder frei. In jeder App steckt dafür derselbe
+Block (`wakeSupported/wakeWanted/updateWake/requestWake/releaseWake`), `render()` ruft
+`updateWake()` auf.
+
+Umschaltbar im laufenden Spiel über das **⋯-Menü** („✓/○ Bildschirm anlassen"), in
+Qwixx zusätzlich als Schalter im Setup. Standard ist **an**, die Einstellung liegt als
+`keepAwake` im jeweiligen `localStorage`-State und überlebt „Spiel zurücksetzen".
+
+Zu beachten:
+
+- Das System entzieht den Lock, sobald der Tab in den Hintergrund geht – deshalb wird
+  er bei `visibilitychange` neu angefordert.
+- Voraussetzung ist HTTPS (über Caddy gegeben). Browser ohne `navigator.wakeLock`
+  zeigen den Menüpunkt ausgegraut.
+- Ein abgelehnter Request (z. B. Energiesparmodus des Geräts) bleibt still – dann
+  sperrt das Display trotzdem, das lässt sich per Web-API nicht umgehen.
+
 ## App 1: Drinks – Kellner-System
 
 Mobile-first Prototyp eines Kellner-Bestellsystems. Suche + Kategorie-Filter über den
@@ -159,11 +180,8 @@ eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
      Wertung. In der Auswertung sind die Punkte immer sichtbar.
    - **Ende nur nach Regel** (Standard: an) – an ist „Auswerten" (Button **und**
      Menüpunkt) gesperrt, bis eine echte Endbedingung erfüllt ist.
-   - **Bildschirm anlassen** (Standard: an) – hält per **Screen Wake Lock API** das
-     Display wach, solange die Spiel-Ansicht offen ist (nicht im Setup/Ergebnis). Der
-     Lock wird beim Wegschalten des Tabs vom System freigegeben und bei der Rückkehr
-     automatisch neu angefordert. Browser ohne Unterstützung zeigen den Schalter
-     ausgegraut; HTTPS ist Voraussetzung (über Caddy gegeben).
+   - **Bildschirm anlassen** (Standard: an) – siehe Abschnitt „Bildschirm wachhalten";
+     hier zusätzlich als Schalter im Setup, in den anderen Spielen nur im ⋯-Menü.
 2. **Spiel:** vier Farbreihen à 11 Zahlen – Rot/Gelb aufsteigend 2→12, Grün/Blau
    absteigend 12→2. Regelkonform geführt: links liegende Zahlen sind nach einem Kreuz
    gesperrt, die **letzte Zahl** lässt sich erst ab **5 Kreuzen** in der Reihe ankreuzen

@@ -180,6 +180,7 @@ thead .cat-col.corner { z-index: 7; color: var(--muted); font-size: .68rem; text
 .menu-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
 .menu-item { text-align: left; padding: 15px 14px; border-radius: 12px; border: 1px solid #ffffff1a; background: #ffffff10; color: var(--cream); font-size: 1rem; font-weight: 600; }
 .menu-item.danger { color: #e88a76; border-color: #b5533f44; }
+.menu-item:disabled { opacity: .45; cursor: default; }
 
 /* ==================== ERGEBNIS ==================== */
 #view-result {
