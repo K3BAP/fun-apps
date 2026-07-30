@@ -40,7 +40,7 @@
 
   function blank() {
     return { phase: "setup", players: [], active: null, mode: "shared", extClosed: blankFlags(),
-             showScore: true, requireEnd: false };
+             showScore: false, requireEnd: true };
   }
 
   // Reihen, die ein Mitspieler geschlossen hat: manuell markiert (extClosed)
@@ -59,8 +59,8 @@
       if (s && s.players && s.phase) {
         if (s.mode !== "solo" && s.mode !== "shared") s.mode = "shared";
         if (!s.extClosed) s.extClosed = blankFlags();
-        if (typeof s.showScore !== "boolean") s.showScore = true;
-        if (typeof s.requireEnd !== "boolean") s.requireEnd = false;
+        if (typeof s.showScore !== "boolean") s.showScore = false;
+        if (typeof s.requireEnd !== "boolean") s.requireEnd = true;
         s.players.forEach(function (p) {
           if (!p.marks) p.marks = blankMarks();
           if (!p.locked) p.locked = blankFlags();

@@ -153,11 +153,11 @@ eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
 
 1. **Setup:** Modus wählen, Spieler anlegen, Reihenfolge per **Drag & Drop**; dazu zwei
    Optionen (gelten für beide Modi, überleben „Spiel zurücksetzen"):
-   - **Punkte live anzeigen** (Standard: an) – aus bleibt der Punktestand während des
+   - **Punkte live anzeigen** (Standard: aus) – aus bleibt der Punktestand während des
      Spiels verdeckt: Kopfzeile, Spieler-Chips inkl. Krone des Führenden und die
      Übersichts-Tabelle zeigen `·`, je Reihe steht die Zahl der Kreuze (`3×`) statt der
      Wertung. In der Auswertung sind die Punkte immer sichtbar.
-   - **Ende nur nach Regel** (Standard: aus) – an ist „Auswerten" (Button **und**
+   - **Ende nur nach Regel** (Standard: an) – an ist „Auswerten" (Button **und**
      Menüpunkt) gesperrt, bis eine echte Endbedingung erfüllt ist.
 2. **Spiel:** vier Farbreihen à 11 Zahlen – Rot/Gelb aufsteigend 2→12, Grün/Blau
    absteigend 12→2. Regelkonform geführt: links liegende Zahlen sind nach einem Kreuz
