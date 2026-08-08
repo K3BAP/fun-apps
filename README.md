@@ -30,7 +30,7 @@ fun-apps/
     │   ├── index.html
     │   ├── styles.css     # eigenes verspieltes Garten-Theme
     │   └── app.js         # Setup/Drag&Drop-, Phasen- und Ergebnis-Logik
-    └── qwixx/             # App 5: Qwixx-Spielblock (4 Farbreihen, Schlösser, Fehlwürfe)
+    └── qwixx/             # App 5: Qwixx-Spielblock (Schlösser, Fehlwürfe; Original- und „gemixxt"-Block)
         ├── index.html
         ├── styles.css
         └── app.js         # Setup/Optionen-, Block- und Ergebnis-Logik
@@ -172,8 +172,9 @@ Digitaler Spielblock zum Würfelspiel *Qwixx*, mobile-first, kein Backend (Spiel
 Gerät, Umschalten über Spieler-Chips) oder **Einzeln** (jeder öffnet die Seite auf seinem
 eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
 
-1. **Setup:** Modus wählen, Spieler anlegen, Reihenfolge per **Drag & Drop**; dazu drei
-   Optionen (gelten für beide Modi, überleben „Spiel zurücksetzen"):
+1. **Setup:** Modus wählen, **Spielblock** wählen (siehe unten), Spieler anlegen,
+   Reihenfolge per **Drag & Drop**; dazu drei Optionen (gelten für beide Modi, überleben
+   „Spiel zurücksetzen" – wie die Blockwahl):
    - **Punkte live anzeigen** (Standard: aus) – aus bleibt der Punktestand während des
      Spiels verdeckt: Kopfzeile, Spieler-Chips inkl. Krone des Führenden und die
      Übersichts-Tabelle zeigen `·`, je Reihe steht die Zahl der Kreuze (`3×`) statt der
@@ -196,3 +197,31 @@ eigenen Gerät, persönliche Ergebnis-Karte statt Rangliste).
    Aufschlüsselung je Reihe, „📋 Übersicht aller Reihen", **„↩︎ Weiterspielen"** (zurück
    in den Block, falls versehentlich ausgewertet – nichts wird zurückgesetzt) sowie
    „Nochmal (gleiche Spieler)" oder „Neues Spiel".
+
+### Spielblöcke: Original und „Qwixx gemixxt"
+
+Neben dem Originalblock stehen die beiden Blöcke der offiziellen Erweiterung
+**„Qwixx gemixxt"** (NSV) zur Auswahl. Laut deren Anleitung bleiben *„alle Regeln des
+Qwixx-Würfelspieles exakt erhalten"* – es ändert sich **nur der Aufdruck**. Entsprechend
+fasst die Umsetzung keine Logik an: Kreuze, Sperren, Wertung und Endbedingung hängen
+ausschließlich an der **Feldposition** (Index 0…10 je Reihe), Zahlen und Farben sind reine
+Beschriftung.
+
+- **gemixxt A** – Zahlenfolge wie im Original, aber jede Reihe ist in vier **Farbsegmente**
+  geteilt (obere Reihe z. B. gelb `2 3 4`, blau `5 6 7`, grün `8 9 10`, rot `11 12`). Das
+  letzte Segment trägt immer die Reihenfarbe, das Schloss bleibt also rot/gelb/grün/blau.
+- **gemixxt B** – Reihen bleiben einfarbig, die **Zahlen sind gemischt**. Geschlossen wird
+  darum mit **Rot 11, Gelb 10, Grün 3, Blau 4**. Statt ▲/▼ steht am Reihenkopf ein →,
+  weil die Reihe weder auf- noch absteigend läuft.
+
+Die Layouts sind **fest eingebaut** und entsprechen dem gedruckten Block – bewusst nicht
+zufällig gemischt: im **Einzeln**-Modus muss auf allen Geräten derselbe Block stehen, und
+Mitspieler mit Papierblock sollen mitspielen können. Der gewählte Block ist während des
+Spiels als Badge in der (klebenden) Kopfzeile sichtbar und steht auch im Ergebnis.
+Umgestellt wird nur im Setup: Kreuze hängen an der Feldposition, ein Wechsel mitten im
+Spiel würde sie stillschweigend umbeschriften.
+
+Technisch: `state.variant` (`classic` | `gemixxtA` | `gemixxtB`) plus die Tabellen
+`VARIANTS`/`LAYOUTS` in `app.js`; unbekannte oder fehlende Werte fallen beim Laden auf
+`classic` zurück, alte Spielstände laufen dadurch unverändert weiter. Im CSS trägt jede
+Zelle `--cc` (Standard: die Reihenfarbe `--rc`), Variante A setzt es per `.cc-<farbe>` um.

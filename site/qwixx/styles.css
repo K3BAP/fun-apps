@@ -55,6 +55,14 @@ h1, h2 { margin: 0; }
 .seg-btn.on { border-color: var(--gold); background: #c9a15a1f; box-shadow: 0 0 0 1px var(--gold) inset; }
 .seg-btn.on small { color: var(--gold-soft); }
 
+/* Blockauswahl: drei statt zwei Spalten, deshalb etwas kompakter */
+.seg-label { margin: 18px 2px 0; font-size: .8rem; color: var(--muted); }
+.mode-seg.var-seg { margin-top: 6px; gap: 6px; }
+.var-seg .seg-btn { padding: 11px 4px; border-radius: 12px; }
+.var-seg .seg-btn b { font-size: .85rem; }
+.var-seg .seg-btn small { font-size: .62rem; line-height: 1.15; text-align: center; }
+.seg-hint { margin-top: 8px; }
+
 .setup-card { background: #ffffff0f; border: 1px solid #ffffff1a; border-radius: 20px; padding: 16px; margin-top: 16px; }
 .solo-label { display: block; font-size: .8rem; color: var(--muted); margin: 0 0 8px 2px; }
 .solo-input { width: 100%; }
@@ -106,6 +114,12 @@ h1, h2 { margin: 0; }
 }
 .ph-brand { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
 .ph-dice { font-size: 1.3rem; }
+/* Welcher Block liegt auf dem Tisch – bleibt beim Scrollen sichtbar */
+.ph-var {
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  font-size: .62rem; font-weight: 800; letter-spacing: .3px;
+  background: #c9a15a26; border: 1px solid #c9a15a66; color: var(--gold-soft);
+}
 .ph-meta { margin-left: auto; text-align: right; display: flex; flex-direction: column; line-height: 1.25; }
 .ph-round { font-weight: 700; color: var(--gold); font-size: .9rem; }
 .ph-prog { font-size: .72rem; color: var(--muted); max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -156,14 +170,23 @@ h1, h2 { margin: 0; }
 
 .qx-cells { flex: 1; min-width: 0; display: flex; gap: 3px; }
 .qx-cell {
+  --cc: var(--rc);                 /* Feldfarbe = Reihenfarbe, außer bei „gemixxt A“ */
   flex: 1 1 0; min-width: 0; height: 34px;
   border: 1px solid #ffffff2a;
-  border: 1px solid color-mix(in srgb, var(--rc) 55%, #ffffff22);
+  border: 1px solid color-mix(in srgb, var(--cc) 55%, #ffffff22);
   background: #ffffff10; color: var(--cream);
   border-radius: 7px; font-weight: 800; font-size: clamp(.68rem, 2.4vw, .92rem);
   display: flex; align-items: center; justify-content: center; position: relative; padding: 0;
 }
-.qx-cell.on { background: var(--rc); color: #fff; border-color: var(--rc); }
+/* „gemixxt A“: die Reihe ist in vier Farbsegmente geteilt */
+.qx-cell.cc-red    { --cc: #d1503c; }
+.qx-cell.cc-yellow { --cc: #d7ab2b; }
+.qx-cell.cc-green  { --cc: #4e9a55; }
+.qx-cell.cc-blue   { --cc: #4f86c6; }
+/* Im Rahmen allein ist die Segmentfarbe bei vier Farben pro Reihe nicht lesbar */
+.qx-va .qx-cell { background: #ffffff10; background: color-mix(in srgb, var(--cc) 22%, #ffffff10); }
+.qx-cell.on { background: var(--cc); color: #fff; border-color: var(--cc); }
+.qx-va .qx-cell.on { background: var(--cc); }   /* muss nach der Flächen-Regel oben stehen */
 .qx-cell.on::after {
   content: ""; position: absolute; inset: 12%;
   background:

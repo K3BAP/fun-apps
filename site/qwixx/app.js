@@ -17,10 +17,55 @@
     { key: "blue",   label: "Blau", asc: false }
   ];
   var ROW_HEX = { red: "#d1503c", yellow: "#d7ab2b", green: "#4e9a55", blue: "#4f86c6" };
+  var ROW_LABEL = {};
+  ROWS.forEach(function (r) { ROW_LABEL[r.key] = r.label; });
   var LAST = 10;              // Index des letzten (Schließ-)Feldes
   var CLOSE_MIN = 5;          // so viele Kreuze müssen davor schon stehen
   function numberAt(row, i) { return row.asc ? i + 2 : 12 - i; }
   function isSolo() { return state.mode === "solo"; }
+
+  // ---------- Spielblöcke (Erweiterung „Qwixx gemixxt“) ----------
+  // Die Erweiterung ändert keine einzige Regel – nur der Aufdruck des Blocks ist
+  // ein anderer. Weil die ganze Logik hier über Feld-Indizes läuft (0…10 je
+  // Reihe) und Zahlen nur Beschriftung sind, bleibt alles darunter unberührt.
+  var VARIANTS = [
+    { key: "classic",  title: "Original",  sub: "Standard-Block",  badge: null,
+      hint: "Der Block aus dem Grundspiel: Rot und Gelb aufsteigend 2→12, Grün und Blau absteigend 12→2." },
+    { key: "gemixxtA", title: "gemixxt A", sub: "Farbfelder",      badge: "gemixxt A",
+      hint: "Erweiterung „Qwixx gemixxt“, Variante A: gleiche Zahlenfolge wie im Original, aber jede Reihe ist in vier Farbsegmente geteilt." },
+    { key: "gemixxtB", title: "gemixxt B", sub: "Zahlen gemischt", badge: "gemixxt B",
+      hint: "Erweiterung „Qwixx gemixxt“, Variante B: die Reihenfarben bleiben, die Zahlen sind gemischt – geschlossen wird mit Rot 11, Gelb 10, Grün 3, Blau 4." }
+  ];
+
+  // Aufdruck der Zusatzblöcke, Index 0…10 = Feld von links; 10 ist das Schließfeld.
+  // Fehlt „nums“, gelten die Zahlen des Originals; fehlt „cols“, ist jedes Feld
+  // in der Reihenfarbe. Feste Layouts (kein Zufall): im Einzeln-Modus muss auf
+  // allen Geräten derselbe Block stehen.
+  var LAYOUTS = {
+    gemixxtA: { cols: {
+      red:    ["yellow","yellow","yellow","blue","blue","blue","green","green","green","red","red"],
+      yellow: ["red","red","green","green","green","green","blue","blue","yellow","yellow","yellow"],
+      green:  ["blue","blue","blue","yellow","yellow","yellow","red","red","red","green","green"],
+      blue:   ["green","green","red","red","red","red","yellow","yellow","blue","blue","blue"]
+    }},
+    gemixxtB: { nums: {
+      red:    [10,  6,  2,  8,  3,  4, 12,  5,  9,  7, 11],
+      yellow: [ 9, 12,  4,  6,  7,  2,  5,  8, 11,  3, 10],
+      green:  [ 8,  2, 10, 12,  6,  9,  7,  4,  5, 11,  3],
+      blue:   [ 5,  7, 11,  9, 12,  3,  8, 10,  2,  6,  4]
+    }}
+  };
+
+  function layout() { return LAYOUTS[state.variant] || null; }
+  function cellNumber(row, i) { var L = layout(); return (L && L.nums) ? L.nums[row.key][i] : numberAt(row, i); }
+  function cellColor(row, i) { var L = layout(); return (L && L.cols) ? L.cols[row.key][i] : row.key; }
+  function variantInfo() {
+    for (var i = 0; i < VARIANTS.length; i++) if (VARIANTS[i].key === state.variant) return VARIANTS[i];
+    return VARIANTS[0];
+  }
+  function variantSuffix() { var b = variantInfo().badge; return b ? " · " + b : ""; }
+  // Variante B läuft weder auf- noch absteigend – ein ▲/▼ wäre dort schlicht falsch
+  function dirGlyph(row) { return state.variant === "gemixxtB" ? "→" : (row.asc ? "▲" : "▼"); }
 
   // ---------- State ----------
   var state = load();
@@ -40,7 +85,7 @@
 
   function blank() {
     return { phase: "setup", players: [], active: null, mode: "shared", extClosed: blankFlags(),
-             showScore: false, requireEnd: true, keepAwake: true };
+             variant: "classic", showScore: false, requireEnd: true, keepAwake: true };
   }
 
   // Reihen, die ein Mitspieler geschlossen hat: manuell markiert (extClosed)
@@ -59,6 +104,7 @@
       if (s && s.players && s.phase) {
         if (s.mode !== "solo" && s.mode !== "shared") s.mode = "shared";
         if (!s.extClosed) s.extClosed = blankFlags();
+        if (!LAYOUTS[s.variant]) s.variant = "classic";   // alte Stände und Unsinn → Originalblock
         if (typeof s.showScore !== "boolean") s.showScore = false;
         if (typeof s.requireEnd !== "boolean") s.requireEnd = true;
         if (typeof s.keepAwake !== "boolean") s.keepAwake = true;
@@ -184,8 +230,45 @@
     seg.appendChild(segShared); seg.appendChild(segSolo);
     v.appendChild(seg);
 
+    renderBlockPicker(v);
+
     if (isSolo()) renderSetupSolo(v);
     else renderSetupShared(v);
+  }
+
+  // Welcher Spielblock liegt auf dem Tisch? Original oder einer der beiden
+  // „gemixxt“-Blöcke. Nur hier im Setup wählbar: die Kreuze hängen an der
+  // Feldposition, ein Wechsel mitten im Spiel würde sie stillschweigend
+  // umbeschriften.
+  function renderBlockPicker(v) {
+    v.appendChild(el("p", "seg-label", "Spielblock"));
+
+    var seg = el("div", "mode-seg var-seg");
+    var btns = [];
+    var hint = el("p", "setup-hint seg-hint");
+
+    function syncHint() {
+      hint.textContent = variantInfo().hint +
+        (isSolo() ? " Alle Mitspieler müssen denselben Block wählen." : "");
+    }
+
+    VARIANTS.forEach(function (vr) {
+      var b = el("button", "seg-btn" + (state.variant === vr.key ? " on" : ""));
+      b.innerHTML = '<b>' + escapeHtml(vr.title) + '</b><small>' + escapeHtml(vr.sub) + '</small>';
+      b.addEventListener("click", function () {
+        if (state.variant === vr.key) return;
+        state.variant = vr.key; save();
+        // Klassen von Hand umschalten statt renderSetup() – sonst wäre ein
+        // halb getippter Spielername weg.
+        btns.forEach(function (other, k) { other.classList.toggle("on", VARIANTS[k].key === state.variant); });
+        syncHint();
+      });
+      btns.push(b); seg.appendChild(b);
+    });
+
+    v.appendChild(seg);
+    syncHint();
+    v.appendChild(hint);
   }
 
   // Ein Schalter (Label + Kurzbeschreibung) für die Spieloptionen
@@ -352,7 +435,8 @@
     var hide = scoresHidden();
     var head = el("header", "play-head");
     head.innerHTML =
-      '<div class="ph-brand"><span class="ph-dice">🎲</span><b>Qwixx</b></div>' +
+      '<div class="ph-brand"><span class="ph-dice">🎲</span><b>Qwixx</b>' +
+      (variantInfo().badge ? '<span class="ph-var">' + escapeHtml(variantInfo().badge) + '</span>' : '') + '</div>' +
       '<div class="ph-meta"><span class="ph-round">' + (hide ? '🙈 verdeckt' : playerScore(ap) + ' Pkt') + '</span>' +
       '<span class="ph-prog">' + escapeHtml(ap.name) + '</span></div>';
     var menuBtn = el("button", "ph-menu", "⋯"); menuBtn.setAttribute("aria-label", "Menü");
@@ -384,7 +468,7 @@
 
   // Der Spielblock eines Spielers
   function renderSheetFor(p) {
-    var wrap = el("section", "qx-sheet");
+    var wrap = el("section", "qx-sheet" + (state.variant === "gemixxtA" ? " qx-va" : ""));
 
     ROWS.forEach(function (row) {
       var arr = p.marks[row.key];
@@ -397,7 +481,7 @@
       var rowEl = el("div", "qx-row qx-" + row.key + (isLocked ? " closed" : "") + (blocked ? " blocked" : ""));
       var lead = el("div", "qx-lead");
       // Bei verdeckten Punkten steht hier die Zahl der Kreuze statt der Wertung
-      lead.innerHTML = '<span class="qx-dir">' + (row.asc ? "▲" : "▼") + '</span>' +
+      lead.innerHTML = '<span class="qx-dir">' + dirGlyph(row) + '</span>' +
         '<span class="qx-rowscore' + (scoresHidden() ? ' muted' : '') + '">' +
         (scoresHidden() ? cnt + "×" : rowScore(arr, isLocked)) + '</span>';
       rowEl.appendChild(lead);
@@ -411,11 +495,16 @@
           var skipped = !marked && i < mm;                       // übersprungen → gesperrt
           var lockOut = !marked && isLast && cnt < CLOSE_MIN;    // letzte Zahl noch nicht freigeschaltet
 
+          var num = cellNumber(row, i);
+          var cc = cellColor(row, i);            // bei „gemixxt A“ nicht die Reihenfarbe
+
           var cell = el("button", "qx-cell" +
+            (cc !== row.key ? " cc-" + cc : "") +
             (marked ? " on" : "") +
             (skipped ? " skip" : "") +
             ((lockOut || (!available && !marked && !skipped)) ? " off" : ""),
-            String(numberAt(row, i)));
+            String(num));
+          if (cc !== row.key) cell.setAttribute("aria-label", num + " · " + ROW_LABEL[cc]);
 
           var canUndo = marked && i === mm;
           cell.disabled = !available && !canUndo;
@@ -574,10 +663,10 @@
     reset.addEventListener("click", function () {
       closeSheet();
       var opts = { showScore: state.showScore, requireEnd: state.requireEnd,
-                   keepAwake: state.keepAwake, mode: state.mode };
+                   keepAwake: state.keepAwake, mode: state.mode, variant: state.variant };
       state = blank();
       state.showScore = opts.showScore; state.requireEnd = opts.requireEnd;
-      state.keepAwake = opts.keepAwake; state.mode = opts.mode;
+      state.keepAwake = opts.keepAwake; state.mode = opts.mode; state.variant = opts.variant;
       save(); render();
     });
     box.appendChild(block); box.appendChild(evalItem); box.appendChild(wakeMenuItem());
@@ -611,7 +700,7 @@
 
     var head = el("header", "res-head");
     head.innerHTML = '<div class="res-crown">🎲</div><h1>Dein Ergebnis</h1>' +
-      '<p>' + escapeHtml(p.name) + ' · ' + total + ' Punkte</p>';
+      '<p>' + escapeHtml(p.name) + ' · ' + total + ' Punkte' + variantSuffix() + '</p>';
     v.appendChild(head);
 
     var list = el("div", "res-list");
@@ -619,7 +708,7 @@
       var arr = p.marks[row.key], lk = p.locked[row.key];
       var rrow = el("div", "res-row");
       rrow.style.setProperty("--accent", ROW_HEX[row.key]);
-      rrow.appendChild(el("div", "res-rank", row.asc ? "▲" : "▼"));
+      rrow.appendChild(el("div", "res-rank", dirGlyph(row)));
       var mid = el("div", "res-mid");
       mid.innerHTML = '<div class="res-name">' + row.label + (lk ? ' 🔒' : '') + '</div>' +
         '<div class="res-break">' + countMarks(arr) + ' Kreuze' + (lk ? ' + Schloss' : '') + '</div>';
@@ -671,7 +760,7 @@
 
     var head = el("header", "res-head");
     head.innerHTML = '<div class="res-crown">🎲</div><h1>Endstand</h1>' +
-      '<p>' + escapeHtml(ranked[0].p.name) + ' gewinnt mit ' + ranked[0].total + ' Punkten</p>';
+      '<p>' + escapeHtml(ranked[0].p.name) + ' gewinnt mit ' + ranked[0].total + ' Punkten' + variantSuffix() + '</p>';
     v.appendChild(head);
 
     var list = el("div", "res-list");
