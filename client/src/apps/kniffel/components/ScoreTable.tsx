@@ -88,28 +88,32 @@ function BonusRow({ sheets }: { sheets: readonly Sheet[] }) {
 function ValueCell({
   value,
   active,
+  editable,
   onClick,
   label,
 }: {
   value: number | undefined;
   active: boolean;
+  editable: boolean;
   onClick: () => void;
   label: string;
 }) {
   const empty = value === undefined;
   const struck = value === 0;
+  const text = empty ? (editable ? "+" : "") : struck ? "—" : value;
 
   return (
     <td className={`${CELL} p-0 ${active ? "bg-primary/5" : ""}`}>
       <button
         type="button"
         onClick={onClick}
+        disabled={!editable}
         aria-label={label}
         className={`min-h-11 w-full px-2 py-1.5 text-center ${
           empty ? "text-base-content/25" : struck ? "text-base-content/40" : "font-semibold"
         }`}
       >
-        {empty ? "+" : struck ? "—" : value}
+        {text}
       </button>
     </td>
   );
@@ -123,11 +127,14 @@ export function ScoreTable({
   players,
   sheets,
   activeIdx,
+  editableIndex,
   onPick,
 }: {
   players: readonly Player[];
   sheets: readonly Sheet[];
   activeIdx: number;
+  /** `null` = alle Spalten bearbeitbar (ohne Raum). Sonst nur die eigene. */
+  editableIndex: number | null;
   onPick: (player: Player, cat: Category) => void;
 }) {
   const span = players.length + 1;
@@ -143,6 +150,7 @@ export function ScoreTable({
             key={player.id}
             value={sheets[index]?.[cat.key as CatKey]}
             active={index === activeIdx}
+            editable={editableIndex === null || editableIndex === index}
             label={`${cat.label}, ${player.name}`}
             onClick={() => onPick(player, cat)}
           />

@@ -1,4 +1,12 @@
-import { makePlayer, playerName, type Player, type PlayerId } from "@/game/players";
+import {
+  adoptRoster,
+  makePlayer,
+  playerName,
+  rosterMatches,
+  type Player,
+  type PlayerId,
+  type RosterEntry,
+} from "@/game/players";
 import { useGame } from "@/game/context";
 import type { GameDefinition, Phase } from "@/game/types";
 import type { CatKey, Sheet } from "./rules";
@@ -11,6 +19,9 @@ export type KniffelState = {
 };
 
 export type KniffelAction =
+  | { type: "setSheetAt"; index: number; sheet: Sheet }
+  | { type: "setRoster"; roster: RosterEntry[] }
+  | { type: "setPhase"; phase: Phase }
   | { type: "addPlayer"; name: string }
   | { type: "removePlayer"; id: PlayerId }
   | { type: "reorderPlayers"; ids: PlayerId[] }
@@ -38,8 +49,45 @@ export const kniffelGame: GameDefinition<KniffelState, KniffelAction> = {
 
   toSetupAction: { type: "backToSetup" },
 
+  /**
+   * Ein Platz ist eine Spalte. Wer den Platz hat, fuellt seine Spalte; alle
+   * anderen sehen sie live, aber nur lesend. Es gibt hier keinen abgeleiteten
+   * Wert ueber mehrere Spieler hinweg – Kniffel ist der einfachste Fall.
+   */
+  sync: {
+    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
+    seatData: (state, index) => {
+      const player = state.players[index];
+      return player ? sheetOf(state, player.id) : {};
+    },
+    applySeat: (index, data) => ({ type: "setSheetAt", index, sheet: data as Sheet }),
+    applyRoster: (roster) => ({ type: "setRoster", roster }),
+    applyPhase: (phase) => ({ type: "setPhase", phase }),
+  },
+
   reducer(draft, action) {
     switch (action.type) {
+      case "setSheetAt": {
+        const player = draft.players[action.index];
+        if (player) draft.sheets[player.id] = action.sheet;
+        break;
+      }
+
+      case "setRoster": {
+        // Idempotent: kommt bei jeder Raum-Aenderung erneut.
+        if (rosterMatches(draft.players, action.roster)) break;
+        draft.players = adoptRoster(draft.players, action.roster);
+        const ids = new Set(draft.players.map((p) => p.id));
+        for (const id of Object.keys(draft.sheets)) if (!ids.has(id)) delete draft.sheets[id];
+        for (const player of draft.players) draft.sheets[player.id] ??= {};
+        break;
+      }
+
+      case "setPhase": {
+        draft.phase = action.phase;
+        break;
+      }
+
       case "addPlayer": {
         const player = makePlayer(playerName(action.name, draft.players.length), draft.players);
         draft.players.push(player);

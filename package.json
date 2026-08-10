@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Sammlung kleiner nuetzlicher Web-Apps als React-PWA",
   "workspaces": [
+    "shared",
     "client",
     "server"
   ],

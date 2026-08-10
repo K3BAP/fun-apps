@@ -10,8 +10,20 @@
  */
 const NS = "fa2";
 
+/**
+ * `?device=b` trennt in der Entwicklung nicht nur die Geraete-Kennung, sondern
+ * auch den Speicher – sonst teilen sich zwei Tabs im selben Browserprofil einen
+ * Spielstand, und der Mehrgeraete-Modus laesst sich lokal nicht ehrlich testen.
+ * Ohne den Parameter aendert sich nichts.
+ */
+function devScope(): string {
+  if (typeof location === "undefined") return "";
+  const override = new URLSearchParams(location.search).get("device");
+  return override ? `${override}:` : "";
+}
+
 export function nsKey(...parts: string[]): string {
-  return [NS, ...parts].join(":");
+  return `${NS}:${devScope()}${parts.join(":")}`;
 }
 
 export function readJson<T>(key: string, fallback: T): T {

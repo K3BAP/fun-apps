@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMySeatIndex } from "@/sync/useMySeat";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { EntrySheet, type EntryTarget } from "../components/EntrySheet";
@@ -12,6 +13,8 @@ export function Play() {
   const { players } = store.state;
   const sheets = sheetsInOrder(store.state);
   const [target, setTarget] = useState<EntryTarget | null>(null);
+  // Im Raum gehoert einem genau eine Spalte; ohne Raum alle.
+  const editableIndex = useMySeatIndex();
 
   const filled = totalFilled(sheets);
   const maxFields = TOTAL_FIELDS * players.length;
@@ -40,6 +43,7 @@ export function Play() {
         players={players}
         sheets={sheets}
         activeIdx={activeIndex(sheets)}
+        editableIndex={editableIndex}
         onPick={(player, cat) => setTarget({ player, cat })}
       />
 

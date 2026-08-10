@@ -3,6 +3,10 @@ import type { AppManifest } from "@/apps/types";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { nsKey } from "@/storage/keys";
+import { RoomProvider } from "@/sync/RoomProvider";
+import { useRoom } from "@/sync/context";
+import { RoomSheet } from "@/sync/RoomSheet";
+import { useGameSync } from "@/sync/useGameSync";
 import { ThemeScope } from "@/theme/ThemeProvider";
 import { MenuSheet } from "@/ui/MenuSheet";
 import { GameContext } from "./context";
@@ -16,17 +20,7 @@ import { useGameStore, type GameStore } from "./useGameStore";
  */
 export const KEEP_AWAKE_KEY = nsKey("keepAwake");
 
-/**
- * Der Rahmen um ein Spiel: Zustand, Theme, Wachhalten des Bildschirms und das
- * ⋯-Menue. Alles, was in allen vier Spielen gleich ist, steht hier – die Spiele
- * selbst bestehen dadurch fast nur noch aus Regeln und Ansicht.
- */
-export function GameHost<S, A>({
-  definition,
-  manifest,
-  menu,
-  children,
-}: {
+type Props<S, A> = {
   definition: GameDefinition<S, A>;
   manifest: AppManifest;
   /**
@@ -35,7 +29,21 @@ export function GameHost<S, A>({
    */
   menu?: (store: GameStore<S, A>) => MenuItem[];
   children: ReactNode;
-}) {
+};
+
+/**
+ * Der Rahmen um ein Spiel: Zustand, Theme, Wachhalten des Bildschirms, das
+ * ⋯-Menue und – falls das Spiel es anbietet – der Mehrgeraete-Modus.
+ */
+export function GameHost<S, A>(props: Props<S, A>) {
+  return (
+    <RoomProvider>
+      <GameHostInner {...props} />
+    </RoomProvider>
+  );
+}
+
+function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, A>) {
   const store = useGameStore(definition);
   const phase = definition.phaseOf(store.state);
 
@@ -43,6 +51,27 @@ export function GameHost<S, A>({
   const { supported: wakeSupported } = useWakeLock(phase === "play" && keepAwake);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [roomOpen, setRoomOpen] = useState(false);
+
+  const { client, snapshot } = useRoom();
+  useGameSync(definition, store);
+
+  // Beim Öffnen der App: einem Raum aus dem QR-Link folgen (?raum=ABCD) oder
+  // die zuletzt benutzte Sitzung wieder aufnehmen.
+  useEffect(() => {
+    if (!definition.sync) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("raum");
+    if (code) {
+      client.join(code);
+      // Den Code aus der Adresse nehmen, damit ein Reload nicht erneut beitritt.
+      params.delete("raum");
+      const query = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (query ? `?${query}` : ""));
+      return;
+    }
+    client.resume(definition.id);
+  }, [client, definition.sync, definition.id]);
 
   // Beim Phasenwechsel nach oben – sonst startet man das Ergebnis mitten drin.
   useEffect(() => {
@@ -56,13 +85,25 @@ export function GameHost<S, A>({
 
   const standardItems: MenuItem[] = [];
 
-  if (definition.undo) {
+  if (definition.sync) {
     standardItems.push({
-      label: `↩︎ ${definition.undoLabel ?? "Rückgängig"}`,
-      disabled: !store.canUndo,
+      label: snapshot.room
+        ? `👥 Raum ${snapshot.room.code}${snapshot.status === "offline" ? " · offline" : ""}`
+        : "👥 Auf mehreren Geräten",
+      onSelect: () => setRoomOpen(true),
+    });
+  }
+
+  if (definition.undo) {
+    // Im Raum abgeschaltet: „zurueck“ waere dort eine Aussage ueber fremde
+    // Plaetze, und die gehoeren einem nicht.
+    const inRoom = snapshot.room !== null;
+    standardItems.push({
+      label: `↩︎ ${definition.undoLabel ?? "Rückgängig"}${inRoom ? " · nicht im Raum" : ""}`,
+      disabled: inRoom || !store.canUndo,
       onSelect: store.undo,
     });
-    if (store.canRedo) {
+    if (!inRoom && store.canRedo) {
       standardItems.push({ label: "↪︎ Wiederholen", onSelect: store.redo });
     }
   }
@@ -97,6 +138,17 @@ export function GameHost<S, A>({
           onClose={() => setMenuOpen(false)}
           items={[...(menu?.(store) ?? []), ...standardItems]}
         />
+        {definition.sync && (
+          <RoomSheet
+            open={roomOpen}
+            onClose={() => setRoomOpen(false)}
+            gameId={definition.id}
+            gameVersion={definition.version}
+            phase={phase}
+            spec={definition.sync}
+            state={store.state}
+          />
+        )}
       </ThemeScope>
     </GameContext>
   );

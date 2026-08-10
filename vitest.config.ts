@@ -17,6 +17,18 @@ export default defineConfig({
           passWithNoTests: true,
         },
       },
+      {
+        test: {
+          name: "server",
+          root: "./server",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+          passWithNoTests: true,
+        },
+        resolve: {
+          alias: { "@fun/shared": new URL("./shared/src/index.ts", import.meta.url).pathname },
+        },
+      },
     ],
   },
 });

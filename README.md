@@ -123,6 +123,62 @@ eine Version Rückstand.
 Auf Android landen die vier Apps zusätzlich als **Shortcuts** im Icon-Menü. iOS
 wertet die nicht aus – dort führt das Icon auf die Übersicht.
 
+## Auf mehreren Geräten (Räume)
+
+Optional kann jeder auf seinem eigenen Gerät spielen. Ein Gerät eröffnet im
+⋯-Menü einen **Raum** und bekommt einen vierstelligen Code plus QR-Code; die
+anderen scannen ihn (`/beitreten/<Code>`) oder tippen den Code ein und
+**übernehmen einen Platz**.
+
+Das Modell in einem Satz: **ein Platz, ein Schreiber.** Jeder Platz gehört genau
+einem Gerät. Nur dieses Gerät schreibt seine Spalte bzw. seinen Block; alle
+anderen sehen sie live, aber nur lesend – fremde Felder sind gar nicht erst
+antippbar. Konflikte sind damit nicht gelöst, sondern ausgeschlossen. Deshalb
+wird der Inhalt eines Platzes immer **vollständig** übertragen statt als Diff:
+ein Qwixx-Block sind rund 700 Byte, eine Kniffel-Spalte 13 Zahlen.
+
+Der Server kennt **keine Spielregeln**. Werte, die sich aus allen Plätzen
+zusammen ergeben, rechnet jedes Gerät selbst aus – das sind reine Funktionen,
+die überall dasselbe Ergebnis liefern.
+
+**Alles daran ist freiwillig.** Ohne Raum spielt jedes Spiel exakt wie vorher.
+Und mit Raum gilt: die Verbindung ist eine Annehmlichkeit, keine Voraussetzung.
+
+- Bricht die Verbindung ab, wird **lokal ohne Unterbrechung weitergespielt**.
+  Ausgehende Änderungen sammeln sich (je Platz nur der letzte Stand – richtig,
+  weil vollständig übertragen wird) und gehen bei der nächsten Verbindung raus.
+- Beim Wiederverbinden gleicht jedes Gerät ab: was lokal neuer ist, geht noch
+  einmal raus, alles andere wird übernommen. Ein veralteter Stand wird am
+  Zählerstand erkannt und still verworfen – das Nachspielen ist dadurch von
+  selbst unschädlich.
+- Räume leben **nur im Arbeitsspeicher** und verfallen, wenn niemand mehr da ist
+  (`ROOM_TTL_MIN`, Standard 120). Ein Server-Neustart beendet laufende Räume;
+  jedes Gerät behält seinen vollständigen Spielstand und spielt weiter. Das ist
+  eine bewusste Eigenschaft, keine Lücke.
+
+Die Berechtigung ist bewusst schlicht: wer den Code kennt, ist im Raum; einen
+Platz beschreibt nur sein Eigentümer; Phase und Einstellungen ändert nur der
+Host. Für eine Partie am Küchentisch ist das angemessen – es ist keine
+Zugriffskontrolle und gibt auch nicht vor, eine zu sein.
+
+Das Übertragungsverfahren steckt hinter `client/src/sync/transport.ts`. Heute ein
+WebSocket zum eigenen Server; ein späterer QR-/WebRTC-Transport (echtes
+Peer-to-Peer im lokalen Netz, ganz ohne Server) müsste nur dieselben fünf
+Mitglieder erfüllen. Web Bluetooth kommt dafür übrigens **nicht** in Frage: die
+API kennt nur die Central-Rolle, ein Browser kann sich nicht als Peripheriegerät
+melden – zwei Handys finden sich darüber nie.
+
+### Lokal testen
+
+Zwei Tabs im selben Browserprofil teilen sich Speicher und Gerätekennung. Dafür
+gibt es `?device=b`: der Parameter hängt ein Suffix an die Kennung **und**
+trennt den localStorage-Namensraum. Ohne ihn ändert sich nichts.
+
+```
+Tab 1: http://localhost:5173/kniffel?device=a     # Raum eröffnen, Platz nehmen
+Tab 2: http://localhost:5173/beitreten/<Code>?device=b
+```
+
 ## Themes und Hell/Dunkel
 
 Jede Unter-App bringt ein **Theme-Paar** mit (daisyUI). Welche Hälfte gilt,
