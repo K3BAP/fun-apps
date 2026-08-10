@@ -13,6 +13,12 @@ export const t = {
   beetTitle: (name: string) => `Beete von ${name}`,
   beetSubtitle: (index: number, total: number) =>
     `Gärtner ${index} / ${total} · tippe die 3 Beete an`,
+  beetSubtitleRoom: "Tippe deine 3 Beete an – alle tragen gleichzeitig ein",
+  ready: "Fertig",
+  notReady: "Doch noch nicht",
+  waitingFor: (count: number) =>
+    count === 1 ? "Warte noch auf einen Gärtner …" : `Warte noch auf ${count} Gärtner …`,
+  allReady: "Alle fertig – gleich geht es weiter.",
   bedTitle: (index: number) => `🌱 Beet ${index}`,
   points: (value: number) => `${value} P`,
   colorfulness: "Farbigkeit",

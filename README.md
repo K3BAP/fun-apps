@@ -161,6 +161,30 @@ Platz beschreibt nur sein Eigentümer; Phase und Einstellungen ändert nur der
 Host. Für eine Partie am Küchentisch ist das angemessen – es ist keine
 Zugriffskontrolle und gibt auch nicht vor, eine zu sein.
 
+### Was ein Raum je Spiel bedeutet
+
+- **Kniffel** – ein Platz ist eine Spalte. Der einfachste Fall: kein Wert hängt
+  von den anderen ab.
+- **Qwixx** – ein Platz ist ein Block. Schließt jemand eine Reihe, ist sie bei
+  allen gesperrt. Das brauchte **keine Zeile Protokoll**: `closedRows` ist eine
+  reine Funktion aller Blöcke, und ob die auf einem Gerät liegen oder von
+  mehreren kommen, ist ihr egal. Das Schloss-Feld von Hand bleibt trotzdem – für
+  Mitspieler mit Papierblock.
+- **Ab ins Beet** – ein Platz ist ein Gärtner, und hier zeigt sich die
+  **Bereit-Schranke**: alle tragen ihre Beete gleichzeitig ein und tippen auf
+  _Fertig_. Erst wenn jeder fertig ist, geht der Tisch gemeinsam weiter – der
+  Bonus hängt schließlich von allen ab. Statt des Blätterns durch alle Gärtner
+  sieht jeder nur seinen eigenen.
+- **Wizard** – kein Raum. Ansagen und Stiche werden ohnehin reihum an einem
+  Block eingetragen; ein zweites Gerät brächte dort nichts.
+
+Zwei Dinge gehören dabei dem Tisch und nicht einem Platz und liegen deshalb beim
+Host: die Phase und die Einstellungen (bei Ab ins Beet auch der Durchgang und die
+bereits gewerteten Durchgänge). Ein Anführer ist hier einfacher zu verstehen als
+drei Geräte, die gleichzeitig weiterschalten. Spieler-Kennungen entstehen pro
+Gerät und taugen nicht für den Austausch – wo sie in geteilten Daten vorkämen,
+wird an der Grenze auf **Platznummern** übersetzt.
+
 Das Übertragungsverfahren steckt hinter `client/src/sync/transport.ts`. Heute ein
 WebSocket zum eigenen Server; ein späterer QR-/WebRTC-Transport (echtes
 Peer-to-Peer im lokalen Netz, ganz ohne Server) müsste nur dieselben fünf

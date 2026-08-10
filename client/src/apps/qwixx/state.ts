@@ -1,5 +1,13 @@
 import { useGame } from "@/game/context";
-import { makePlayer, playerName, type Player, type PlayerId } from "@/game/players";
+import {
+  adoptRoster,
+  makePlayer,
+  playerName,
+  rosterMatches,
+  type Player,
+  type PlayerId,
+  type RosterEntry,
+} from "@/game/players";
 import type { GameDefinition, Phase } from "@/game/types";
 import {
   LAST,
@@ -36,7 +44,18 @@ export type QwixxState = {
   sheets: Record<PlayerId, SeatSheet>;
 };
 
+/** Was im Raum spielweit gilt – der Host gibt es vor. */
+export type QwixxConfig = {
+  variant: VariantKey;
+  showScore: boolean;
+  requireEnd: boolean;
+};
+
 export type QwixxAction =
+  | { type: "setSheetAt"; index: number; sheet: SeatSheet }
+  | { type: "setRoster"; roster: RosterEntry[] }
+  | { type: "setPhase"; phase: Phase }
+  | { type: "setConfig"; config: QwixxConfig }
   | { type: "addPlayer"; name: string }
   | { type: "removePlayer"; id: PlayerId }
   | { type: "reorderPlayers"; ids: PlayerId[] }
@@ -125,8 +144,64 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
     requireEnd: state.requireEnd,
   }),
 
+  /**
+   * Ein Platz ist ein Block. Die Reihensperren ueber mehrere Spieler hinweg
+   * brauchen dabei **keine** Protokoll-Unterstuetzung: `closedRows` ist eine
+   * reine Funktion aller Bloecke – ob die auf einem Geraet liegen oder von
+   * mehreren kommen, ist ihr egal. Der Mehrgeraete-Modus erbt die Sperren also,
+   * ohne dass eine Regel doppelt geschrieben wird.
+   */
+  sync: {
+    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
+    seatData: (state, index) => {
+      const player = state.players[index];
+      return player ? sheetOf(state, player.id) : blankSheet();
+    },
+    applySeat: (index, data) => ({ type: "setSheetAt", index, sheet: data as SeatSheet }),
+    applyRoster: (roster) => ({ type: "setRoster", roster }),
+    applyPhase: (phase) => ({ type: "setPhase", phase }),
+    configOf: (state): QwixxConfig => ({
+      variant: state.variant,
+      showScore: state.showScore,
+      requireEnd: state.requireEnd,
+    }),
+    applyConfig: (config) => ({ type: "setConfig", config: config as QwixxConfig }),
+  },
+
   reducer(draft, action) {
     switch (action.type) {
+      case "setSheetAt": {
+        const player = draft.players[action.index];
+        if (player) draft.sheets[player.id] = action.sheet;
+        break;
+      }
+
+      case "setRoster": {
+        if (rosterMatches(draft.players, action.roster)) break;
+        draft.players = adoptRoster(draft.players, action.roster);
+        const ids = new Set(draft.players.map((p) => p.id));
+        for (const id of Object.keys(draft.sheets)) if (!ids.has(id)) delete draft.sheets[id];
+        for (const player of draft.players) draft.sheets[player.id] ??= blankSheet();
+        if (!draft.activeId || !ids.has(draft.activeId)) {
+          draft.activeId = draft.players[0]?.id ?? null;
+        }
+        break;
+      }
+
+      case "setPhase": {
+        draft.phase = action.phase;
+        break;
+      }
+
+      case "setConfig": {
+        // Der Block darf sich nicht mitten im Spiel aendern – Kreuze haengen an
+        // der Feldposition und wuerden sonst still umbeschriftet.
+        if (draft.phase === "setup") draft.variant = action.config.variant;
+        draft.showScore = action.config.showScore;
+        draft.requireEnd = action.config.requireEnd;
+        break;
+      }
+
       case "addPlayer": {
         const player = makePlayer(playerName(action.name, draft.players.length), draft.players);
         draft.players.push(player);

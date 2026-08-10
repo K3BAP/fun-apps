@@ -1,5 +1,13 @@
 import { useGame } from "@/game/context";
-import { makePlayer, playerName, type Player, type PlayerId } from "@/game/players";
+import {
+  adoptRoster,
+  makePlayer,
+  playerName,
+  rosterMatches,
+  type Player,
+  type PlayerId,
+  type RosterEntry,
+} from "@/game/players";
 import type { GameDefinition, Phase } from "@/game/types";
 import {
   ROUNDS,
@@ -26,7 +34,51 @@ export type BeetState = {
   rounds: RoundRecord[];
 };
 
+/**
+ * Ein gewerteter Durchgang, wie er ueber die Leitung geht: nach **Platznummer**
+ * statt nach Spieler-Kennung.
+ *
+ * Spieler-Kennungen sind auf jedem Geraet andere – sie taugen nicht fuer den
+ * Austausch. Uebersetzt wird genau hier an der Grenze, damit der restliche Code
+ * (und die Tests) weiter mit Kennungen arbeiten koennen.
+ */
+type WireRound = { beet: number[]; bonus: number[]; tier: number[] };
+
+/**
+ * Alles, was zum Tisch gehoert und nicht zu einem einzelnen Platz: wo der
+ * Durchgang steht und was schon gewertet wurde. Im Raum gibt der Host es vor –
+ * so bekommt auch ein spaet dazugestossenes Geraet die bisherigen Durchgaenge.
+ */
+export type BeetConfig = { round: number; step: BeetStep; rounds: WireRound[] };
+
+function toWire(rounds: readonly RoundRecord[], players: readonly Player[]): WireRound[] {
+  const column = (record: Record<PlayerId, number>) => players.map((p) => record[p.id] ?? 0);
+  return rounds.map((round) => ({
+    beet: column(round.beet),
+    bonus: column(round.bonus),
+    tier: column(round.tier),
+  }));
+}
+
+function fromWire(rounds: readonly WireRound[], players: readonly Player[]): RoundRecord[] {
+  const record = (values: readonly number[]) =>
+    Object.fromEntries(players.map((p, i) => [p.id, values[i] ?? 0]));
+  return rounds.map((round) => ({
+    beet: record(round.beet),
+    bonus: record(round.bonus),
+    tier: record(round.tier),
+  }));
+}
+
+/** Der Anteil eines Gaertners am Zustand. */
+export type BeetSeatData = { beds: Bed[]; tier: number };
+
 export type BeetAction =
+  | { type: "setSeatAt"; index: number; data: BeetSeatData }
+  | { type: "setRoster"; roster: RosterEntry[] }
+  | { type: "setPhase"; phase: Phase }
+  | { type: "setConfig"; config: BeetConfig }
+  | { type: "barrierOpen"; token: string }
   | { type: "addPlayer"; name: string }
   | { type: "removePlayer"; id: PlayerId }
   | { type: "reorderPlayers"; ids: PlayerId[] }
@@ -52,6 +104,33 @@ export function beetTotalOf(state: BeetState, id: PlayerId): number {
 /** Beetpunkte aller Spieler – die Grundlage des Bonus. */
 export function beetTotals(state: BeetState): Record<PlayerId, number> {
   return Object.fromEntries(state.players.map((p) => [p.id, beetTotalOf(state, p.id)]));
+}
+
+/**
+ * Einen Durchgang abschliessen: Beet-, Bonus- und Tierpunkte festschreiben.
+ *
+ * Rechnet ausschliesslich aus dem State – im Raum stehen dort die
+ * zusammengefuehrten Eintraege aller Geraete, sodass jedes Geraet zum selben
+ * Ergebnis kommt.
+ */
+function closeRound(state: BeetState): void {
+  const beet = beetTotals(state);
+  const bonus = bonusTiers(beet);
+  const limit = maxTier(state.round);
+  const tier: Record<PlayerId, number> = {};
+  for (const player of state.players) {
+    // Auch hier deckeln, nicht nur in der Anzeige: ein Wert aus einem spaeteren
+    // Durchgang darf nicht in einen frueheren durchsickern.
+    tier[player.id] = Math.min(state.draftTier[player.id] ?? 0, limit) * TIER_POINTS;
+  }
+
+  state.rounds.push({ beet, bonus, tier });
+  state.draftBeds = {};
+  state.draftTier = {};
+  state.step = "beet";
+  state.beetIdx = 0;
+  if (state.round >= ROUNDS) state.phase = "result";
+  else state.round += 1;
 }
 
 function freshGame(state: BeetState): void {
@@ -87,8 +166,73 @@ export const beetGame: GameDefinition<BeetState, BeetAction> = {
 
   transient: (action) => action.type !== "finishRound",
 
+  /**
+   * Ein Platz ist ein Gaertner. Hier zeigt sich die Bereit-Schranke: alle tragen
+   * ihre Beete gleichzeitig ein, und erst wenn jeder fertig ist, geht es
+   * gemeinsam weiter – der Bonus haengt schliesslich von allen ab.
+   */
+  sync: {
+    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
+    seatData: (state, index): BeetSeatData => {
+      const player = state.players[index];
+      return player
+        ? { beds: bedsOf(state, player.id), tier: state.draftTier[player.id] ?? 0 }
+        : { beds: newBeds(), tier: 0 };
+    },
+    applySeat: (index, data) => ({ type: "setSeatAt", index, data: data as BeetSeatData }),
+    applyRoster: (roster) => ({ type: "setRoster", roster }),
+    applyPhase: (phase) => ({ type: "setPhase", phase }),
+    configOf: (state): BeetConfig => ({
+      round: state.round,
+      step: state.step,
+      rounds: toWire(state.rounds, state.players),
+    }),
+    applyConfig: (config) => ({ type: "setConfig", config: config as BeetConfig }),
+    barrierToken: (state) => `r${state.round}:${state.step}`,
+    applyBarrierOpen: (token) => ({ type: "barrierOpen", token }),
+  },
+
   reducer(draft, action) {
     switch (action.type) {
+      case "setSeatAt": {
+        const player = draft.players[action.index];
+        if (!player) break;
+        draft.draftBeds[player.id] = action.data.beds;
+        draft.draftTier[player.id] = action.data.tier;
+        break;
+      }
+
+      case "setRoster": {
+        if (rosterMatches(draft.players, action.roster)) break;
+        draft.players = adoptRoster(draft.players, action.roster);
+        const ids = new Set(draft.players.map((p) => p.id));
+        for (const id of Object.keys(draft.draftBeds)) if (!ids.has(id)) delete draft.draftBeds[id];
+        for (const id of Object.keys(draft.draftTier)) if (!ids.has(id)) delete draft.draftTier[id];
+        break;
+      }
+
+      case "setPhase": {
+        draft.phase = action.phase;
+        break;
+      }
+
+      case "setConfig": {
+        draft.round = action.config.round;
+        draft.step = action.config.step;
+        draft.rounds = fromWire(action.config.rounds, draft.players);
+        break;
+      }
+
+      // Alle sind fertig. Nur der Host bekommt das (siehe useGameSync) und
+      // schaltet weiter; die anderen folgen ueber `config`.
+      case "barrierOpen": {
+        if (action.token !== `r${draft.round}:${draft.step}`) break; // schon weiter
+        if (draft.step === "beet") draft.step = "bonus";
+        else if (draft.step === "bonus") draft.step = "tier";
+        else closeRound(draft);
+        break;
+      }
+
       case "addPlayer": {
         draft.players.push(
           makePlayer(playerName(action.name, draft.players.length), draft.players),
@@ -144,23 +288,7 @@ export const beetGame: GameDefinition<BeetState, BeetAction> = {
       }
 
       case "finishRound": {
-        const beet = beetTotals(draft);
-        const bonus = bonusTiers(beet);
-        const limit = maxTier(draft.round);
-        const tier: Record<PlayerId, number> = {};
-        for (const player of draft.players) {
-          // Auch hier deckeln, nicht nur in der Anzeige: ein Wert aus einem
-          // spaeteren Durchgang darf nicht in einen frueheren durchsickern.
-          tier[player.id] = Math.min(draft.draftTier[player.id] ?? 0, limit) * TIER_POINTS;
-        }
-
-        draft.rounds.push({ beet, bonus, tier });
-        draft.draftBeds = {};
-        draft.draftTier = {};
-        draft.step = "beet";
-        draft.beetIdx = 0;
-        if (draft.round >= ROUNDS) draft.phase = "result";
-        else draft.round += 1;
+        closeRound(draft);
         break;
       }
 

@@ -16,6 +16,9 @@ export default defineConfig({
           include: ["src/**/*.test.ts"],
           passWithNoTests: true,
         },
+        resolve: {
+          alias: { "@": new URL("./client/src", import.meta.url).pathname },
+        },
       },
       {
         test: {

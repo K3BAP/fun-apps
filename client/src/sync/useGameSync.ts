@@ -88,8 +88,11 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
 
     if (spec.applyPhase && !isHost) dispatch(spec.applyPhase(room.phase));
 
-    // Die Schranke ist offen: jedes Geraet rechnet den Rest selbst aus.
-    if (room.barrier?.open && spec.applyBarrierOpen) {
+    // Die Schranke ist offen: alle sind fertig, es geht weiter. Den Schritt
+    // macht nur der Host – die anderen folgen ueber `config`. Ein Anfuehrer ist
+    // hier einfacher zu verstehen als drei Geraete, die gleichzeitig
+    // weiterschalten.
+    if (room.barrier?.open && spec.applyBarrierOpen && isHost) {
       if (appliedBarrier.current !== room.barrier.token) {
         appliedBarrier.current = room.barrier.token;
         dispatch(spec.applyBarrierOpen(room.barrier.token));
@@ -103,6 +106,13 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
 
     const phase = definition.phaseOf(state);
     if (phase !== room.phase) client.patchRoom({ phase });
+
+    // Die Einstellungen wandern nicht nur beim Anlegen mit: bei Ab ins Beet
+    // steht hier der Schritt, an dem der Tisch gerade ist.
+    if (spec.configOf) {
+      const config = spec.configOf(state);
+      if (JSON.stringify(config) !== JSON.stringify(room.config)) client.patchRoom({ config });
+    }
 
     if (spec.barrierToken) {
       const token = spec.barrierToken(state);

@@ -25,6 +25,7 @@ function Cell({
   index,
   sheet,
   blocked,
+  readOnly,
   onToggle,
 }: {
   variant: VariantKey;
@@ -32,6 +33,7 @@ function Cell({
   index: number;
   sheet: SeatSheet;
   blocked: boolean;
+  readOnly: boolean;
   onToggle: () => void;
 }) {
   const state = cellState(sheet, rowKey, index, blocked);
@@ -40,7 +42,7 @@ function Cell({
   const hex = ROW_HEX[color];
 
   // Ein gesetztes Kreuz laesst sich nur loesen, wenn es das rechteste ist.
-  const clickable = state === "available" || canUnmark(sheet, rowKey, index);
+  const clickable = !readOnly && (state === "available" || canUnmark(sheet, rowKey, index));
 
   const style =
     state === "marked"
@@ -71,12 +73,14 @@ function LockCell({
   sheet,
   closedByOther,
   manuallyClosed,
+  readOnly,
   onToggle,
 }: {
   rowKey: RowKey;
   sheet: SeatSheet;
   closedByOther: boolean;
   manuallyClosed: boolean;
+  readOnly: boolean;
   onToggle: () => void;
 }) {
   const mine = sheet.locked[rowKey];
@@ -94,7 +98,7 @@ function LockCell({
   return (
     <button
       type="button"
-      disabled={mine || closedByOther}
+      disabled={readOnly || mine || closedByOther}
       onClick={onToggle}
       title={title}
       aria-label={title}
@@ -117,6 +121,7 @@ export function QwixxSheet({
   closed,
   extClosed,
   hideScores,
+  readOnly = false,
   onToggleCell,
   onToggleLock,
   onSetPenalty,
@@ -128,6 +133,8 @@ export function QwixxSheet({
   /** Von Hand gesetzte Schloesser. */
   extClosed: Locks;
   hideScores: boolean;
+  /** Im Raum: fremde Bloecke sieht man, aber man schreibt nicht hinein. */
+  readOnly?: boolean;
   onToggleCell: (row: RowKey, index: number) => void;
   onToggleLock: (row: RowKey) => void;
   onSetPenalty: (box: number) => void;
@@ -164,6 +171,7 @@ export function QwixxSheet({
                   index={index}
                   sheet={sheet}
                   blocked={blocked}
+                  readOnly={readOnly}
                   onToggle={() => onToggleCell(row.key, index)}
                 />
               ))}
@@ -172,6 +180,7 @@ export function QwixxSheet({
                 sheet={sheet}
                 closedByOther={blocked && !extClosed[row.key]}
                 manuallyClosed={extClosed[row.key]}
+                readOnly={readOnly}
                 onToggle={() => onToggleLock(row.key)}
               />
             </div>
@@ -191,6 +200,7 @@ export function QwixxSheet({
               key={box}
               type="button"
               onClick={() => onSetPenalty(box)}
+              disabled={readOnly}
               aria-pressed={box < sheet.penalties}
               aria-label={`Fehlwurf ${box + 1}`}
               className={`grid size-9 place-items-center rounded border-2 font-bold ${

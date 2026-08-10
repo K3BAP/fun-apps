@@ -1,3 +1,4 @@
+import { useSeatReady, type SeatReady } from "@/sync/useMySeat";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -37,11 +38,13 @@ function StepHead({ step, title, subtitle }: { step: BeetStep; title: string; su
   );
 }
 
-/** Schritt ① – ein Gaertner nach dem anderen. */
-function BeetStepView() {
+/** Schritt ① – ein Gaertner nach dem anderen, im Raum alle gleichzeitig. */
+function BeetStepView({ seatIndex }: { seatIndex: number | null }) {
   const { store } = useBeet();
   const { state } = store;
-  const player = state.players[state.beetIdx];
+  // Im Raum blaettert niemand: jeder hat seinen eigenen Gaertner vor sich.
+  const index = seatIndex ?? state.beetIdx;
+  const player = state.players[index];
   if (!player) return null;
 
   return (
@@ -49,7 +52,11 @@ function BeetStepView() {
       <StepHead
         step="beet"
         title={t.beetTitle(player.name)}
-        subtitle={t.beetSubtitle(state.beetIdx + 1, state.players.length)}
+        subtitle={
+          seatIndex === null
+            ? t.beetSubtitle(state.beetIdx + 1, state.players.length)
+            : t.beetSubtitleRoom
+        }
       />
 
       {bedsOf(state, player.id).map((bed, index) => (
@@ -103,16 +110,18 @@ function BonusStepView() {
 }
 
 /** Schritt ③ – wie viele Beete erfuellen eine Tierkarte? */
-function TierStepView() {
+function TierStepView({ seatIndex }: { seatIndex: number | null }) {
   const { store } = useBeet();
   const { state } = store;
   const limit = maxTier(state.round);
+  // Im Raum trägt jeder nur für sich ein; die anderen stehen daneben.
+  const rows = seatIndex === null ? state.players : state.players.slice(seatIndex, seatIndex + 1);
 
   return (
     <>
       <StepHead step="tier" title={t.tierTitle} subtitle={t.tierSubtitle(limit)} />
       <ul className="flex flex-col gap-2">
-        {state.players.map((player) => {
+        {rows.map((player) => {
           const count = Math.min(state.draftTier[player.id] ?? 0, limit);
           return (
             <li
@@ -138,6 +147,32 @@ function TierStepView() {
         })}
       </ul>
     </>
+  );
+}
+
+/**
+ * Im Raum ersetzt ein einziger Knopf alle Weiter-Knoepfe: „Fertig“. Sobald alle
+ * fertig sind, schaltet der Tisch gemeinsam weiter.
+ */
+function ReadyFooter({ seat }: { seat: SeatReady }) {
+  const { store } = useBeet();
+  const last = store.state.step === "tier" && store.state.round >= ROUNDS;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {seat.ready && (
+        <p className="text-base-content/60 text-center text-sm">
+          {seat.waitingFor > 0 ? t.waitingFor(seat.waitingFor) : t.allReady}
+        </p>
+      )}
+      <button
+        type="button"
+        className={`btn btn-block ${seat.ready ? "btn-outline" : "btn-primary"}`}
+        onClick={() => seat.setReady(!seat.ready)}
+      >
+        {seat.ready ? t.notReady : last ? t.finishGame : t.ready}
+      </button>
+    </div>
   );
 }
 
@@ -219,6 +254,8 @@ function Footer() {
 export function Play() {
   const { store } = useBeet();
   const { state } = store;
+  const seat = useSeatReady();
+  const seatIndex = seat?.index ?? null;
 
   return (
     <GameLayout
@@ -228,7 +265,7 @@ export function Play() {
           secondary={t.tierCards(maxTier(state.round))}
         />
       }
-      footer={<Footer />}
+      footer={seat ? <ReadyFooter seat={seat} /> : <Footer />}
     >
       <StandingsChips
         standings={state.players.map((player) => ({
@@ -238,9 +275,9 @@ export function Play() {
       />
 
       <section className="mx-auto flex max-w-lg flex-col gap-3 px-3 pb-4">
-        {state.step === "beet" && <BeetStepView />}
+        {state.step === "beet" && <BeetStepView seatIndex={seatIndex} />}
         {state.step === "bonus" && <BonusStepView />}
-        {state.step === "tier" && <TierStepView />}
+        {state.step === "tier" && <TierStepView seatIndex={seatIndex} />}
       </section>
     </GameLayout>
   );

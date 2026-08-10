@@ -1,3 +1,4 @@
+import { useMySeatIndex } from "@/sync/useMySeat";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -16,11 +17,16 @@ import { t } from "../strings";
 
 export function Play() {
   const { store } = useQwixx();
+  const mySeatIndex = useMySeatIndex();
   const { state } = store;
   const player = activePlayer(state);
   if (!player) return null;
 
-  const solo = state.mode === "solo";
+  // Im Raum darf man nur in den eigenen Block schreiben – die anderen sind zum
+  // Ansehen da (und liefern nebenbei die Reihensperren).
+  const inRoom = mySeatIndex !== null;
+  const readOnly = inRoom && state.players.indexOf(player) !== mySeatIndex;
+  const solo = state.mode === "solo" && !inRoom;
   const hidden = scoresHidden(state);
   const sheet = sheetOf(state, player.id);
   const closed = closedFor(state);
@@ -91,6 +97,7 @@ export function Play() {
           closed={closed}
           extClosed={state.extClosed}
           hideScores={hidden}
+          readOnly={readOnly}
           onToggleCell={(row, index) =>
             store.dispatch({ type: "toggleCell", player: player.id, row, index })
           }
