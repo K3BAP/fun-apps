@@ -1,16 +1,18 @@
 services:
-  # Sammelprojekt fun-apps – statische Spaß-/Prototyp-Webapps (kein Build, kein Backend).
-  # nginx liefert ./site aus; jede App liegt in einem Unterordner (z. B. site/drinks).
-  # Reverse-Proxy + TLS übernimmt Caddy (Block fun.sponholz.org). Kein Portexport.
+  # Sammelprojekt fun-apps – React-PWA mit schlankem Express-Backend.
+  # Ein Container: Express liefert den Client-Build aus (mit passenden
+  # Cache-Headern) und beherbergt /api. Reverse-Proxy + TLS übernimmt Caddy
+  # (Block fun.sponholz.org). Kein Portexport.
+  #
+  # Anders als früher gibt es einen Build-Step – Änderungen brauchen
+  # `docker compose up -d --build`, ein Neustart allein genügt nicht mehr.
   fun-apps-web:
-    image: nginx:alpine
+    build: .
+    image: fun-apps:latest
     container_name: fun-apps-web
     restart: unless-stopped
-    volumes:
-      - ./site:/usr/share/nginx/html:ro
-      # Ordner-Mount (keine Einzeldatei): Edits an der Conf brauchen nur ein
-      # docker restart, keinen Container-Neubau. Setzt Cache-Control: no-cache.
-      - ./nginx:/etc/nginx/conf.d:ro
+    environment:
+      - PORT=3000
     networks:
       - proxy-tier
 
