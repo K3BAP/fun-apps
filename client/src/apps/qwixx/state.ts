@@ -9,9 +9,12 @@ import {
   type RosterEntry,
 } from "@/game/players";
 import type { GameDefinition, Phase } from "@/game/types";
+import { rankBy } from "@/game/rank";
 import {
   LAST,
   MAX_PENALTIES,
+  sheetScore,
+  variantInfo,
   blankLocks,
   blankSheet,
   canUnmark,
@@ -134,6 +137,13 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
   phaseOf: (state) => state.phase,
 
   toSetupAction: { type: "backToSetup" },
+
+  summarize: (state) => ({
+    standings: rankBy(state.players, (player) => sheetScore(sheetOf(state, player.id))).map(
+      (entry) => ({ name: entry.item.name, score: entry.score }),
+    ),
+    note: variantInfo(state.variant).badge ?? undefined,
+  }),
 
   // Die Einstellungen und der gewaehlte Block ueberleben „Spiel zurücksetzen“ –
   // sie beschreiben den Tisch, nicht die Partie.

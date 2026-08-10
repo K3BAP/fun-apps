@@ -1,8 +1,9 @@
 import { rankBy } from "@/game/rank";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
 import { ResultHeader } from "@/ui/ResultHeader";
+import { ShareButton } from "@/ui/ShareButton";
 import { BONUS_POINTS, bonus, grandTotal, lowerSum, upperTotal } from "../rules";
-import { sheetOf, useKniffel } from "../state";
+import { kniffelGame, sheetOf, useKniffel } from "../state";
 import { t } from "../strings";
 
 export function Result() {
@@ -37,6 +38,7 @@ export function Result() {
       <Ranking entries={entries} />
 
       <div className="flex flex-col gap-2">
+        <ShareButton summary={kniffelGame.summarize!(state)} />
         <button
           type="button"
           className="btn btn-primary"

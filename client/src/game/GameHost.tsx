@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AppManifest } from "@/apps/types";
+import { useHaptics } from "@/hooks/useHaptics";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { useWakeLock } from "@/hooks/useWakeLock";
-import { nsKey } from "@/storage/keys";
+import { appendGame } from "@/storage/history";
+import { nsKey, readJson, writeJson } from "@/storage/keys";
 import { RoomProvider } from "@/sync/RoomProvider";
 import { useRoom } from "@/sync/context";
 import { RoomSheet } from "@/sync/RoomSheet";
@@ -49,6 +51,7 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
 
   const [keepAwake, setKeepAwake] = usePersistentState(KEEP_AWAKE_KEY, true);
   const { supported: wakeSupported } = useWakeLock(phase === "play" && keepAwake);
+  const haptics = useHaptics();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [roomOpen, setRoomOpen] = useState(false);
@@ -77,6 +80,21 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [phase]);
+
+  // Beendete Spiele wandern in den Verlauf. Die Unterschrift verhindert
+  // Doppeleintraege, wenn man das Ergebnis mehrfach betritt („Weiterspielen“)
+  // oder die Seite dort neu laedt.
+  useEffect(() => {
+    if (phase !== "result" || !definition.summarize) return;
+    const summary = definition.summarize(store.state);
+    if (summary.standings.length === 0) return;
+
+    const key = nsKey(definition.id, "lastArchived");
+    const signature = JSON.stringify(summary);
+    if (readJson<string | null>(key, null) === signature) return;
+    writeJson(key, signature);
+    void appendGame({ gameId: definition.id, ...summary });
+  }, [phase, definition, store.state]);
 
   const contextValue = useMemo(
     () => ({ store, manifest, openMenu: () => setMenuOpen(true) }),
@@ -114,6 +132,11 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
     }`,
     disabled: !wakeSupported,
     onSelect: () => setKeepAwake((on) => !on),
+  });
+
+  standardItems.push({
+    label: `${haptics.enabled ? "✓" : "○"} Vibrieren beim Tippen`,
+    onSelect: () => haptics.setEnabled(!haptics.enabled),
   });
 
   if (phase !== "setup") {

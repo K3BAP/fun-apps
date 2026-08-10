@@ -78,7 +78,18 @@ export interface GameDefinition<S, A> {
 
   /** Gesetzt = dieses Spiel kann in einem Raum gespielt werden. */
   readonly sync?: SyncSpec<S, A>;
+
+  /** Endstand in einheitlicher Form – fuer Verlauf und Teilen. */
+  summarize?(state: S): GameSummary;
 }
+
+/** Was von einem beendeten Spiel uebrig bleibt: fuer Verlauf und Teilen. */
+export type GameSummary = {
+  /** Rangliste, bester zuerst. */
+  standings: { name: string; score: number }[];
+  /** Zusatz, z. B. der gewaehlte Qwixx-Block. */
+  note?: string;
+};
 
 export type MenuItem = {
   label: string;

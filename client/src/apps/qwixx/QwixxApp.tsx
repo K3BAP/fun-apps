@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { GameHost } from "@/game/GameHost";
 import { PhaseView } from "@/ui/PhaseView";
+import { DiceRoller, type DieSpec } from "@/ui/DiceRoller";
+import { ROW_HEX } from "./colors";
 import { OverviewSheet } from "./components/OverviewSheet";
 import manifest from "./manifest";
 import { sheetScore } from "./rules";
@@ -10,8 +12,19 @@ import { Play } from "./views/Play";
 import { Result } from "./views/Result";
 import { Setup } from "./views/Setup";
 
+/** Die sechs Qwixx-Wuerfel: zwei weisse und je einer in den vier Reihenfarben. */
+const DICE: DieSpec[] = [
+  { label: "Weiß 1" },
+  { label: "Weiß 2" },
+  { label: "Rot", color: ROW_HEX.red },
+  { label: "Gelb", color: ROW_HEX.yellow },
+  { label: "Grün", color: ROW_HEX.green },
+  { label: "Blau", color: ROW_HEX.blue },
+];
+
 export default function QwixxApp() {
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [diceOpen, setDiceOpen] = useState(false);
 
   return (
     <GameHost
@@ -25,6 +38,7 @@ export default function QwixxApp() {
             label: store.state.mode === "solo" ? t.menuOverviewSolo : t.menuOverviewShared,
             onSelect: () => setOverviewOpen(true),
           },
+          { label: t.menuDice, onSelect: () => setDiceOpen(true) },
           {
             label: evaluable ? t.menuEvaluate : t.menuEvaluateLocked,
             disabled: !evaluable,
@@ -35,6 +49,7 @@ export default function QwixxApp() {
     >
       <Phases onShowOverview={() => setOverviewOpen(true)} />
       <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} />
+      <DiceRoller open={diceOpen} onClose={() => setDiceOpen(false)} dice={DICE} />
     </GameHost>
   );
 }

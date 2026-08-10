@@ -48,6 +48,7 @@ export const t = {
 
   menuOverviewSolo: "📋 Reihen-Übersicht",
   menuOverviewShared: "📋 Übersicht aller Spieler",
+  menuDice: "🎲 Würfeln",
   menuEvaluate: "🏁 Spiel auswerten",
   menuEvaluateLocked: "🔒 Auswerten – erst am Spielende",
 

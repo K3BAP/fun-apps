@@ -12,7 +12,8 @@ import {
   sheetScore,
   variantInfo,
 } from "../rules";
-import { sheetOf, useQwixx } from "../state";
+import { ShareButton } from "@/ui/ShareButton";
+import { qwixxGame, sheetOf, useQwixx } from "../state";
 import { t } from "../strings";
 
 function variantSuffix(badge: string | null): string {
@@ -147,6 +148,7 @@ export function Result({ onShowOverview }: { onShowOverview: () => void }) {
         <button type="button" className="btn btn-ghost" onClick={onShowOverview}>
           {t.showOverview}
         </button>
+        <ShareButton summary={qwixxGame.summarize!(store.state)} />
         <ResumeButton />
         <button
           type="button"

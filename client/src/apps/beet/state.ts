@@ -9,11 +9,14 @@ import {
   type RosterEntry,
 } from "@/game/players";
 import type { GameDefinition, Phase } from "@/game/types";
+import { rankBy } from "@/game/rank";
 import {
   ROUNDS,
   TIER_POINTS,
   beetTotal,
   bonusTiers,
+  gameTotal,
+  lastRoundTotal,
   maxTier,
   newBeds,
   type Bed,
@@ -163,6 +166,14 @@ export const beetGame: GameDefinition<BeetState, BeetAction> = {
   phaseOf: (state) => state.phase,
 
   toSetupAction: { type: "backToSetup" },
+
+  summarize: (state) => ({
+    standings: rankBy(
+      state.players,
+      (player) => gameTotal(state.rounds, player.id),
+      (player) => lastRoundTotal(state.rounds, player.id),
+    ).map((entry) => ({ name: entry.item.name, score: entry.score })),
+  }),
 
   transient: (action) => action.type !== "finishRound",
 

@@ -240,6 +240,25 @@ abschaltet, meint sein Gerät, nicht Kniffel. Zu beachten:
 - Ein abgelehnter Request (z. B. Energiesparmodus) bleibt still – dann sperrt das
   Display trotzdem, das lässt sich per Web-API nicht umgehen.
 
+## Kleinigkeiten, die überall gelten
+
+- **Zuletzt benutzte Namen** – wer einmal angelegt wurde, lässt sich in jeder App
+  mit einem Tipp wieder hinzufügen. Bewusst nur eine Vorschlagsliste und keine
+  verwaltete Personenliste: Namen werden beim Anlegen in den Spielstand kopiert,
+  eine spätere Änderung schreibt also keine fertigen Spiele um.
+- **Verlauf** – beendete Spiele wandern nach IndexedDB (`fa2-history`), nur
+  angehängt, nie geändert. Eine Ansicht dafür gibt es absichtlich noch nicht:
+  erst sammeln, dann gegen echte Daten bauen.
+- **Ergebnis teilen** – als Text, nicht als Bild: `navigator.share` mit Dateien
+  kennt Firefox nicht und ist anderswo wacklig, und ein sauber gesetzter Endstand
+  liest sich in einer Gruppe ohnehin gut. Ohne Teilen-Dialog landet der Text in
+  der Zwischenablage.
+- **Würfel** – in Kniffel und Qwixx im ⋯-Menü, falls gerade keine auf dem Tisch
+  liegen. Antippen hält einen Würfel fest; ohne das wäre es für Kniffel nutzlos,
+  wo genau das Liegenlassen den Zug ausmacht.
+- **Vibrieren beim Tippen** – kurzes Rückmelden beim Ankreuzen, abschaltbar.
+  `navigator.vibrate` gibt es nur auf Android; iOS ignoriert es stillschweigend.
+
 ## Der gemeinsame Rahmen
 
 In den Vorgänger-Apps war rund die Hälfte jeder Datei Kopie: der Wake-Lock-Block,

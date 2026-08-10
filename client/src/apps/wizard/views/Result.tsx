@@ -2,9 +2,10 @@ import { useState } from "react";
 import { rankBy } from "@/game/rank";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
 import { ResultHeader } from "@/ui/ResultHeader";
+import { ShareButton } from "@/ui/ShareButton";
 import { BlockSheet } from "../components/BlockSheet";
 import { hits, totalScore } from "../rules";
-import { useWizard } from "../state";
+import { useWizard, wizardGame } from "../state";
 import { t } from "../strings";
 
 export function Result() {
@@ -34,6 +35,7 @@ export function Result() {
         <button type="button" className="btn btn-ghost" onClick={() => setBlockOpen(true)}>
           {t.showBlock}
         </button>
+        <ShareButton summary={wizardGame.summarize!(store.state)} />
         <button
           type="button"
           className="btn btn-primary"

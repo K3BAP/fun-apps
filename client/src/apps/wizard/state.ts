@@ -1,7 +1,8 @@
 import { useGame } from "@/game/context";
 import { makePlayer, playerName, type Player, type PlayerId } from "@/game/players";
 import type { GameDefinition, Phase } from "@/game/types";
-import { maxRounds, type RoundRecord } from "./rules";
+import { rankBy } from "@/game/rank";
+import { maxRounds, totalScore, type RoundRecord } from "./rules";
 
 export type WizardStep = "bid" | "trick";
 
@@ -60,6 +61,12 @@ export const wizardGame: GameDefinition<WizardState, WizardAction> = {
   phaseOf: (state) => state.phase,
 
   toSetupAction: { type: "backToSetup" },
+
+  summarize: (state) => ({
+    standings: rankBy(state.players, (player) => totalScore(state.rounds, player.id)).map(
+      (entry) => ({ name: entry.item.name, score: entry.score }),
+    ),
+  }),
 
   /**
    * Nur das Abschliessen einer Runde ist es wert, zurueckgenommen zu werden –

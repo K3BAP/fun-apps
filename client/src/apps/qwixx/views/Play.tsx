@@ -1,3 +1,4 @@
+import { useHaptics } from "@/hooks/useHaptics";
 import { useMySeatIndex } from "@/sync/useMySeat";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
@@ -18,6 +19,7 @@ import { t } from "../strings";
 export function Play() {
   const { store } = useQwixx();
   const mySeatIndex = useMySeatIndex();
+  const { tap } = useHaptics();
   const { state } = store;
   const player = activePlayer(state);
   if (!player) return null;
@@ -98,11 +100,18 @@ export function Play() {
           extClosed={state.extClosed}
           hideScores={hidden}
           readOnly={readOnly}
-          onToggleCell={(row, index) =>
-            store.dispatch({ type: "toggleCell", player: player.id, row, index })
-          }
-          onToggleLock={(row) => store.dispatch({ type: "toggleExtClosed", row })}
-          onSetPenalty={(box) => store.dispatch({ type: "setPenalty", player: player.id, box })}
+          onToggleCell={(row, index) => {
+            tap();
+            store.dispatch({ type: "toggleCell", player: player.id, row, index });
+          }}
+          onToggleLock={(row) => {
+            tap();
+            store.dispatch({ type: "toggleExtClosed", row });
+          }}
+          onSetPenalty={(box) => {
+            tap();
+            store.dispatch({ type: "setPenalty", player: player.id, box });
+          }}
         />
       </div>
     </GameLayout>

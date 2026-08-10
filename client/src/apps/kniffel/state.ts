@@ -9,7 +9,8 @@ import {
 } from "@/game/players";
 import { useGame } from "@/game/context";
 import type { GameDefinition, Phase } from "@/game/types";
-import type { CatKey, Sheet } from "./rules";
+import { rankBy } from "@/game/rank";
+import { grandTotal, type CatKey, type Sheet } from "./rules";
 
 export type KniffelState = {
   phase: Phase;
@@ -48,6 +49,12 @@ export const kniffelGame: GameDefinition<KniffelState, KniffelAction> = {
   phaseOf: (state) => state.phase,
 
   toSetupAction: { type: "backToSetup" },
+
+  summarize: (state) => ({
+    standings: rankBy(state.players, (player) => grandTotal(sheetOf(state, player.id))).map(
+      (entry) => ({ name: entry.item.name, score: entry.score }),
+    ),
+  }),
 
   /**
    * Ein Platz ist eine Spalte. Wer den Platz hat, fuellt seine Spalte; alle

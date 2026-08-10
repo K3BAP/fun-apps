@@ -16,6 +16,7 @@ export const t = {
   openFields: (open: number) => `Noch ${open} ${open === 1 ? "Feld" : "Felder"} offen`,
   showResult: "Auswertung anzeigen",
 
+  dice: "🎲 Würfeln",
   strike: "streichen",
   clearField: "Feld leeren",
 
