@@ -1,24 +1,16 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import { APPS } from "./manifests";
 import type { AppId, AppManifest } from "./types";
-import kniffel from "./kniffel/manifest";
-import wizard from "./wizard/manifest";
-import beet from "./beet/manifest";
-import qwixx from "./qwixx/manifest";
+
+export { APPS };
 
 /**
- * Die eine Stelle, an der Unter-Apps registriert werden.
+ * Die Ansicht je Unter-App, nachgeladen pro Route.
  *
- * Routen, die Kacheln der Landing-Page und die Shortcuts im PWA-Manifest werden
- * hieraus erzeugt – eine neue App braucht einen Ordner und einen Eintrag hier,
- * sonst nichts.
+ * Der Typ ist vollstaendig (kein `Partial`): eine App, die in `manifests.ts`
+ * steht, aber hier fehlt, faellt beim Uebersetzen auf – nicht erst im Browser.
  */
-export const APPS: readonly AppManifest[] = [kniffel, wizard, beet, qwixx];
-
-/**
- * Die tatsaechlichen Ansichten, nachgeladen pro Route. Fehlt eine App hier, ist
- * sie noch nicht portiert und die Route zeigt einen Platzhalter.
- */
-export const APP_VIEWS: Partial<Record<AppId, LazyExoticComponent<ComponentType>>> = {
+export const APP_VIEWS: Record<AppId, LazyExoticComponent<ComponentType>> = {
   kniffel: lazy(() => import("./kniffel/KniffelApp")),
   wizard: lazy(() => import("./wizard/WizardApp")),
   beet: lazy(() => import("./beet/BeetApp")),

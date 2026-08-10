@@ -1,4 +1,4 @@
-import type { AppManifest } from "@/apps/types";
+import type { AppManifest } from "../types";
 
 const manifest: AppManifest = {
   id: "beet",

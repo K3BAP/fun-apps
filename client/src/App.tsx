@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { APPS, APP_VIEWS } from "@/apps/registry";
+import { UpdateToast } from "@/pwa/UpdateToast";
 import { ThemeProvider } from "@/theme/ThemeProvider";
-import ComingSoon from "@/pages/ComingSoon";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
 
@@ -24,17 +24,12 @@ export default function App() {
             <Route path="/" element={<Home />} />
             {APPS.map((app) => {
               const View = APP_VIEWS[app.id];
-              return (
-                <Route
-                  key={app.id}
-                  path={`${app.path}/*`}
-                  element={View ? <View /> : <ComingSoon manifest={app} />}
-                />
-              );
+              return <Route key={app.id} path={`${app.path}/*`} element={<View />} />;
             })}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        <UpdateToast />
       </BrowserRouter>
     </ThemeProvider>
   );

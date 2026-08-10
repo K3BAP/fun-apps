@@ -1,4 +1,4 @@
-import type { ThemePair } from "@/theme/themes";
+import type { ThemePair } from "../theme/themes";
 
 export type AppId = "kniffel" | "wizard" | "beet" | "qwixx";
 
