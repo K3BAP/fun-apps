@@ -1,0 +1,41 @@
+import { Suspense } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { APPS, APP_VIEWS } from "@/apps/registry";
+import { ThemeProvider } from "@/theme/ThemeProvider";
+import ComingSoon from "@/pages/ComingSoon";
+import Home from "@/pages/Home";
+import NotFound from "@/pages/NotFound";
+
+/** Kurzer Moment beim Nachladen einer App – bewusst unauffaellig. */
+function RouteFallback() {
+  return (
+    <div className="bg-base-100 flex min-h-dvh items-center justify-center">
+      <span className="loading loading-dots loading-lg text-base-content/40" />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <BrowserRouter>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            {APPS.map((app) => {
+              const View = APP_VIEWS[app.id];
+              return (
+                <Route
+                  key={app.id}
+                  path={`${app.path}/*`}
+                  element={View ? <View /> : <ComingSoon manifest={app} />}
+                />
+              );
+            })}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}

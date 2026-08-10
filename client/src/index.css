@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/*
+  Nur die Themes laden, die auch wirklich benutzt werden – jedes daisyUI-Theme ist
+  ein Block CSS-Variablen, die ungenutzten waeren totes Gewicht. Die Zuordnung
+  App -> Theme-Paar steht in src/theme/themes.ts; beide Listen muessen zusammen
+  gepflegt werden.
+*/
+@plugin "daisyui" {
+  themes:
+    silk --default,
+    luxury,
+    caramellatte,
+    coffee,
+    fantasy,
+    dracula,
+    garden,
+    forest,
+    winter,
+    night;
+}
+
+/*
+  Themen-unabhaengige Farben. Die vier Qwixx-Reihen sind Spielmaterial, keine
+  Designentscheidung – sie muessen in jedem Theme gleich aussehen.
+*/
+@theme {
+  --color-row-red: #c0392b;
+  --color-row-yellow: #c8961f;
+  --color-row-green: #3f7f47;
+  --color-row-blue: #3a6ea5;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    /* Die Bloecke liegen auf dem Tisch und werden angetippt, nicht gelesen und
+       markiert – versehentliches Text-Markieren stoert dabei nur. */
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior-y: none;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Ziel: keine 44px-Untergrenze unterschreiten. Gilt fuer alles, was getippt wird. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    touch-action: manipulation;
+  }
+}
+
+@utility safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@utility safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}

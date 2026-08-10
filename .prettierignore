@@ -1,0 +1,8 @@
+dist/
+node_modules/
+package-lock.json
+
+# Der alte Vanilla-Stand – wird in Phase 5 geloescht, bis dahin unangetastet.
+site/
+nginx/
+README.md
