@@ -1,5 +1,7 @@
 import { useGame } from "@/game/context";
 import type { ReactNode } from "react";
+import { Container } from "./Container";
+import { MoreIcon } from "./icons";
 
 /**
  * Die klebende Kopfzeile der Spiel-Ansicht: Marke links, Kurzstand rechts,
@@ -21,7 +23,7 @@ export function GameHeader({
 
   return (
     <header className="bg-base-100 border-base-300 shrink-0 border-b safe-top">
-      <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 pb-2">
+      <Container className="flex items-center gap-3 px-3 pb-2 sm:px-4">
         <span className="text-xl leading-none" aria-hidden="true">
           {manifest.emoji}
         </span>
@@ -35,13 +37,13 @@ export function GameHeader({
 
         <button
           type="button"
-          className="btn btn-ghost btn-sm btn-circle text-lg"
+          className="btn btn-ghost btn-sm btn-circle"
           onClick={openMenu}
           aria-label="Menü"
         >
-          ⋯
+          <MoreIcon />
         </button>
-      </div>
+      </Container>
     </header>
   );
 }

@@ -1,35 +1,7 @@
 @import "tailwindcss";
 
-/*
-  Nur die Themes laden, die auch wirklich benutzt werden – jedes daisyUI-Theme ist
-  ein Block CSS-Variablen, die ungenutzten waeren totes Gewicht. Die Zuordnung
-  App -> Theme-Paar steht in src/theme/themes.ts; beide Listen muessen zusammen
-  gepflegt werden.
-*/
-@plugin "daisyui" {
-  themes:
-    silk --default,
-    luxury,
-    caramellatte,
-    coffee,
-    fantasy,
-    dracula,
-    garden,
-    forest,
-    winter,
-    night;
-}
-
-/*
-  Themen-unabhaengige Farben. Die vier Qwixx-Reihen sind Spielmaterial, keine
-  Designentscheidung – sie muessen in jedem Theme gleich aussehen.
-*/
-@theme {
-  --color-row-red: #c0392b;
-  --color-row-yellow: #c8961f;
-  --color-row-green: #3f7f47;
-  --color-row-blue: #3a6ea5;
-}
+/* Farbsystem und Themes – siehe die Erklaerung dort. */
+@import "./themes.css";
 
 @layer base {
   html {
@@ -56,6 +28,56 @@
   [role="button"]:not([aria-disabled="true"]) {
     touch-action: manipulation;
   }
+
+  /*
+    Ein Fokusring fuer alles, was mit der Tastatur erreichbar ist – vorher gab
+    es ihn nur auf den Kacheln der Startseite. `:focus-visible` heisst: nur
+    wenn tatsaechlich per Tastatur navigiert wird, nicht bei jedem Fingertipp.
+  */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/*
+  daisyUI blendet deaktivierte Knoepfe auf 20% Deckkraft. In dieser App traegt
+  gerade der gesperrte Knopf die Begruendung – „Noch 13 Felder offen",
+  „Auswerten ist gesperrt, bis …“ –, und die war auf dem hellen Papier kaum zu
+  lesen. Ausserhalb jeder Layer, damit die Regel die von daisyUI schlaegt.
+*/
+.btn:disabled,
+.btn[disabled],
+.btn.btn-disabled {
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+}
+
+/*
+  Die Toenung des Qwixx-Blocks. Jede Reihe setzt ihre Farbe als `--row`; diese
+  Regeln mischen daraus Flaeche und Rand.
+
+  Das ersetzt die Bastelei mit Hex-Suffixen (`${hex}55`, `${hex}99`), die nur
+  mit sechsstelligen Hexwerten funktionierte und in sRGB mischte. `color-mix`
+  in oklab toent gleichmaessig – und es ist genau die Regel, die die alte
+  `.qx-row`-CSS hatte.
+*/
+@utility row-tint {
+  background-color: color-mix(in oklab, var(--row) 12%, transparent);
+  border-color: color-mix(in oklab, var(--row) 35%, transparent);
+}
+
+@utility row-edge {
+  border-color: color-mix(in oklab, var(--row) 55%, transparent);
+}
+
+/*
+  Ein leeres Feld. Die Flaeche traegt einen Hauch der Feldfarbe – das ist der
+  einzige Hinweis, den die „gemixxt"-Bloecke haben, wo die Farbe eines Feldes
+  von der seiner Reihe abweicht.
+*/
+@utility row-face {
+  background-color: color-mix(in oklab, var(--row) 10%, var(--color-base-100));
+  border-color: color-mix(in oklab, var(--row) 55%, transparent);
 }
 
 @utility safe-bottom {

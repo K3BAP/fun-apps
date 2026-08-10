@@ -24,7 +24,7 @@ fun-apps/
 │       ├── game/          # der gemeinsame Rahmen: Store, Host, Rangliste, Spieler
 │       ├── ui/            # app-unabhängige Bausteine (Sheet, Stepper, Ranking …)
 │       ├── hooks/         # useWakeLock, usePersistentState
-│       ├── theme/         # Theme-Paare je App + globale Hell/Dunkel-Einstellung
+│       ├── theme/         # Akzent je App + globale Hell/Dunkel-Einstellung
 │       ├── storage/       # localStorage-Zugriffe, Namensraum `fa2:`
 │       ├── pwa/           # Update-Hinweis
 │       └── pages/         # Landing-Page, 404
@@ -56,10 +56,11 @@ npm run build    # client/dist (Vite) + server/dist (tsup)
 
 ## Neue App hinzufügen
 
-1. `client/src/apps/<app>/` anlegen: `manifest.ts` (Titel, Emoji, Theme-Paar,
+1. `client/src/apps/<app>/` anlegen: `manifest.ts` (Titel, Emoji, Akzent,
    Spielerzahl), `rules.ts` (rein, mit Tests), `state.ts` (Reducer),
    `strings.ts`, dazu `views/` und ggf. `components/`.
-2. Eintrag in `client/src/apps/manifests.ts` **und** `client/src/apps/registry.ts`.
+2. Eintrag in `client/src/apps/manifests.ts` **und** `client/src/apps/registry.ts`,
+   dazu zwei Akzent-Zeilen am Ende von `client/src/themes.css`.
 3. Icon `client/public/icons/<app>-192.png` für den Manifest-Shortcut.
 
 Route, Kachel auf der Landing-Page und PWA-Shortcut entstehen daraus von selbst.
@@ -205,21 +206,33 @@ Tab 2: http://localhost:5173/beitreten/<Code>?device=b
 
 ## Themes und Hell/Dunkel
 
-Jede Unter-App bringt ein **Theme-Paar** mit (daisyUI). Welche Hälfte gilt,
-entscheidet eine **globale** Einstellung _Auto / Hell / Dunkel_ – im ⋯-Menü jeder
-App und auf der Landing-Page. Standard ist die Systemeinstellung.
+Es gibt **zwei** Themes – `fa-light` (Papier) und `fa-dark` (Tinte) –, definiert in
+[client/src/themes.css](client/src/themes.css). Sie legen Flächen, Radien und
+Signalfarben fest; die Formtoken sind in beiden Zeichen für Zeichen gleich, damit
+beim Umschalten nur die Farbe wechselt und nie die Form der Bedienelemente.
 
-| App         | hell           | dunkel    |
-| ----------- | -------------- | --------- |
-| Übersicht   | `silk`         | `luxury`  |
-| Kniffel     | `caramellatte` | `coffee`  |
-| Wizard      | `fantasy`      | `dracula` |
-| Ab ins Beet | `garden`       | `forest`  |
-| Qwixx       | `winter`       | `night`   |
+Was die Apps unterscheidet, ist **eine** Farbe: ihr Akzent. Eine neue App braucht
+dafür zwei Zeilen CSS.
 
-`data-theme` sitzt auf einem Wrapper je Route – so blutet nichts zwischen den Apps
-aus – und zusätzlich auf `<html>`, damit Hintergrund, Scrollbalken und native
-Bedienelemente stimmen. `<meta name="theme-color">` wird aus dem aktiven Theme
+| App         | Akzent    | Herkunft                                     |
+| ----------- | --------- | -------------------------------------------- |
+| Übersicht   | Gold      | `--gold: #c9a15a` des alten Designs          |
+| Kniffel     | Gold      | dieselbe Hausfarbe                           |
+| Wizard      | Pflaume   | neu, gedeckt                                 |
+| Ab ins Beet | Blattgrün | `--leaf: #3f8f3a` des alten Garten-CSS       |
+| Qwixx       | Schiefer  | leise, damit die Reihenfarben lauter bleiben |
+
+Alle Werte stehen in oklch – dort ist die erste Zahl die _wahrgenommene_ Helligkeit,
+Akzente lassen sich also austauschen, ohne dass der Kontrast kippt. Das Chroma ist
+auf 0.13 gedeckelt; die zuvor benutzten eingebauten daisyUI-Themes lagen bis 0.278
+(`garden` färbte „Ab ins Beet" neonpink).
+
+Welche Hälfte gilt, entscheidet eine **globale** Einstellung _Auto / Hell / Dunkel_ –
+im ⋯-Menü jeder App und auf der Landing-Page. Standard ist die Systemeinstellung.
+
+`data-theme` und `data-accent` sitzen zusammen auf einem Wrapper je Route – so blutet
+nichts zwischen den Apps aus – und zusätzlich auf `<html>`, damit Hintergrund,
+Scrollbalken und native Bedienelemente stimmen. `<meta name="theme-color">` wird aus dem aktiven Theme
 gelesen (und nach Hex normalisiert, weil nicht jeder Browser `oklch()` dort
 versteht). Die vier Qwixx-Reihenfarben und die Spielerfarben sind bewusst
 theme-unabhängig: das ist Spielmaterial, kein Design.
@@ -274,6 +287,11 @@ aus Regeln, einem Reducer und drei Ansichten.
 - **`GameHost`** – Theme, Wachhalten, ⋯-Menü und Store an einer Stelle.
 - **`Sheet`** – Bottom-Sheet auf `<dialog>`; Scrim, Escape und Fokusfalle kommen
   vom Browser.
+- **`Container`** – die eine Stelle, an der Inhaltsbreiten stehen. `GameLayout`
+  legt sie als `--fa-w` fest, Kopf, Inhalt und Fuß lesen denselben Wert; die
+  Kopfzeile _kann_ dadurch nicht breiter sein als ihr Inhalt.
+- **`PlayerRow` / `PlayerTable` / `SetupCard` / `StepTabs` / `SegmentedControl`** –
+  Muster, die vorher fünf- bis achtmal einzeln im Code standen.
 - **`SortablePlayerList`** – dnd-kit statt handgeschriebenem Pointer-Drag, damit
   auch per Tastatur bedienbar.
 

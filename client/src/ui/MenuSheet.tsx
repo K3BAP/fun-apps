@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { MenuItem } from "@/game/types";
 import { ColorModeToggle } from "./ColorModeToggle";
 import { Sheet } from "./Sheet";
+import { ArrowLeftIcon, CheckIcon } from "./icons";
 
 export function MenuSheet({
   open,
@@ -17,18 +18,29 @@ export function MenuSheet({
       <div className="flex flex-col gap-1">
         {items.map((item) => (
           <button
-            key={item.label}
+            key={item.id}
             type="button"
             disabled={item.disabled}
+            aria-pressed={item.checked === undefined ? undefined : item.checked}
             onClick={() => {
               onClose();
               item.onSelect();
             }}
-            className={`btn btn-ghost h-auto min-h-0 justify-start px-3 py-3 text-base font-normal ${
+            className={`btn btn-ghost h-auto min-h-0 justify-start gap-3 px-3 py-3 text-base font-normal ${
               item.danger ? "text-error" : ""
             }`}
           >
-            {item.label}
+            {/* Feste Spalte fuer das Symbol, damit alle Beschriftungen fluchten –
+                auch die Eintraege ohne Symbol und die abgewaehlten Schalter. */}
+            <span className="grid w-5 shrink-0 place-items-center">
+              {item.checked === undefined ? (
+                item.icon
+              ) : item.checked ? (
+                <CheckIcon className="text-primary size-5" />
+              ) : null}
+            </span>
+            <span>{item.label}</span>
+            {item.note && <span className="text-base-content/50 -ms-1 text-sm">· {item.note}</span>}
           </button>
         ))}
 
@@ -41,10 +53,11 @@ export function MenuSheet({
 
         <Link
           to="/"
-          className="btn btn-ghost h-auto min-h-0 justify-start px-3 py-3 text-base font-normal"
+          className="btn btn-ghost h-auto min-h-0 justify-start gap-3 px-3 py-3 text-base font-normal"
           onClick={onClose}
         >
-          ← Alle Apps
+          <ArrowLeftIcon />
+          Alle Apps
         </Link>
       </div>
     </Sheet>

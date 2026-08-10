@@ -1,4 +1,7 @@
 import { useSeatReady, type SeatReady } from "@/sync/useMySeat";
+import { PlayerRow } from "@/ui/PlayerRow";
+import { StepTabs } from "@/ui/StepTabs";
+import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -8,30 +11,16 @@ import { ROUNDS, TIER_POINTS, bonusTiers, gameTotal, maxTier } from "../rules";
 import { bedsOf, beetTotalOf, beetTotals, useBeet, type BeetStep } from "../state";
 import { t } from "../strings";
 
-function StepTabs({ step }: { step: BeetStep }) {
-  const tab = (own: BeetStep, label: string) => (
-    <span
-      key={own}
-      className={`rounded-full px-3 py-1 text-xs ${
-        step === own ? "bg-primary text-primary-content font-semibold" : "bg-base-200"
-      }`}
-    >
-      {label}
-    </span>
-  );
-  return (
-    <div className="flex gap-2">
-      {tab("beet", t.stepBeet)}
-      {tab("bonus", t.stepBonus)}
-      {tab("tier", t.stepTier)}
-    </div>
-  );
-}
+const STEPS = [
+  { key: "beet", label: t.stepBeet },
+  { key: "bonus", label: t.stepBonus },
+  { key: "tier", label: t.stepTier },
+] as const satisfies readonly { key: BeetStep; label: string }[];
 
 function StepHead({ step, title, subtitle }: { step: BeetStep; title: string; subtitle: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <StepTabs step={step} />
+      <StepTabs steps={STEPS} current={step} />
       <h2 className="text-xl font-bold">{title}</h2>
       <p className="text-base-content/60 text-sm">{subtitle}</p>
     </div>
@@ -90,11 +79,7 @@ function BonusStepView() {
       <StepHead step="bonus" title={t.bonusTitle} subtitle={t.bonusSubtitle} />
       <ul className="flex flex-col gap-2">
         {ranked.map((player) => (
-          <li
-            key={player.id}
-            style={{ borderInlineStartColor: player.color }}
-            className="bg-base-200 flex items-center gap-3 rounded-lg border-s-4 px-3 py-2"
-          >
+          <PlayerRow as="li" key={player.id} accent={player.color}>
             <span className="min-w-0 flex-1 truncate font-medium">{player.name}</span>
             <span className="text-base-content/60 text-sm tabular-nums">
               {t.beetPoints(totals[player.id] ?? 0)}
@@ -102,7 +87,7 @@ function BonusStepView() {
             <span className="badge badge-primary badge-lg font-bold tabular-nums">
               +{bonus[player.id] ?? 0}
             </span>
-          </li>
+          </PlayerRow>
         ))}
       </ul>
     </>
@@ -124,11 +109,7 @@ function TierStepView({ seatIndex }: { seatIndex: number | null }) {
         {rows.map((player) => {
           const count = Math.min(state.draftTier[player.id] ?? 0, limit);
           return (
-            <li
-              key={player.id}
-              style={{ borderInlineStartColor: player.color }}
-              className="bg-base-200 flex items-center gap-3 rounded-lg border-s-4 px-3 py-2"
-            >
+            <PlayerRow as="li" key={player.id} accent={player.color}>
               <span className="flex min-w-0 flex-1 flex-col leading-tight">
                 <span className="truncate font-medium">{player.name}</span>
                 <span className="text-base-content/60 text-xs">
@@ -142,7 +123,7 @@ function TierStepView({ seatIndex }: { seatIndex: number | null }) {
                 label={`${player.name}: ${t.tierTitle}`}
                 onChange={(value) => store.dispatch({ type: "setTier", player: player.id, value })}
               />
-            </li>
+            </PlayerRow>
           );
         })}
       </ul>
@@ -274,11 +255,11 @@ export function Play() {
         }))}
       />
 
-      <section className="mx-auto flex max-w-lg flex-col gap-3 px-3 pb-4">
+      <Container className="flex flex-col gap-3 px-3 pb-4 sm:px-4">
         {state.step === "beet" && <BeetStepView seatIndex={seatIndex} />}
         {state.step === "bonus" && <BonusStepView />}
         {state.step === "tier" && <TierStepView seatIndex={seatIndex} />}
-      </section>
+      </Container>
     </GameLayout>
   );
 }

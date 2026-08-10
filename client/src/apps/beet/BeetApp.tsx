@@ -18,7 +18,7 @@ export default function BeetApp() {
       manifest={manifest}
       menu={(store) =>
         store.state.phase === "play"
-          ? [{ label: t.menuBlock, onSelect: () => setBlockOpen(true) }]
+          ? [{ id: "block", icon: "📋", label: t.menuBlock, onSelect: () => setBlockOpen(true) }]
           : []
       }
     >

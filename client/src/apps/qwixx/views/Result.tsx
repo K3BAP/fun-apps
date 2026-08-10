@@ -1,6 +1,8 @@
 import { rankBy } from "@/game/rank";
+import { PlayerRow } from "@/ui/PlayerRow";
+import { Container } from "@/ui/Container";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
-import { ResultHeader } from "@/ui/ResultHeader";
+import { AppHero } from "@/ui/AppHero";
 import { ROW_HEX } from "../colors";
 import {
   PENALTY_POINTS,
@@ -47,7 +49,7 @@ function SoloResult() {
 
   return (
     <>
-      <ResultHeader
+      <AppHero
         emoji="🌈"
         title={t.resultSoloTitle}
         subtitle={t.resultSoloSubtitle(player.name, total, suffix)}
@@ -57,11 +59,7 @@ function SoloResult() {
         {ROWS.map((row) => {
           const locked = sheet.locked[row.key];
           return (
-            <li
-              key={row.key}
-              style={{ borderInlineStartColor: ROW_HEX[row.key] }}
-              className="bg-base-200 flex items-center gap-3 rounded-lg border-s-4 px-3 py-2"
-            >
+            <PlayerRow as="li" key={row.key} accent={ROW_HEX[row.key]}>
               <span className="w-6 text-center" style={{ color: ROW_HEX[row.key] }}>
                 {dirGlyph(state.variant, row.key)}
               </span>
@@ -78,7 +76,7 @@ function SoloResult() {
               <span className="text-lg font-bold tabular-nums">
                 {rowScore(sheet.marks[row.key], locked)}
               </span>
-            </li>
+            </PlayerRow>
           );
         })}
 
@@ -126,7 +124,7 @@ function SharedResult() {
 
   return (
     <>
-      <ResultHeader
+      <AppHero
         emoji="🌈"
         title={t.finalTitle}
         subtitle={winner ? t.winner(winner.item.name, winner.score, suffix) : ""}
@@ -141,7 +139,7 @@ export function Result({ onShowOverview }: { onShowOverview: () => void }) {
   const solo = store.state.mode === "solo";
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-8 safe-bottom">
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       {solo ? <SoloResult /> : <SharedResult />}
 
       <div className="flex flex-col gap-2">
@@ -165,6 +163,6 @@ export function Result({ onShowOverview }: { onShowOverview: () => void }) {
           {solo ? t.backToStart : t.newGame}
         </button>
       </div>
-    </div>
+    </Container>
   );
 }

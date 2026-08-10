@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { ThemeContext, useTheme } from "./context";
-import { SHELL_THEME, type ThemePair } from "./themes";
+import { SHELL_ACCENT, themeName, type AccentKey } from "./themes";
 import { useColorScheme } from "./useColorScheme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -27,23 +27,27 @@ function toHex(color: string): string | null {
 }
 
 /**
- * Setzt das Theme fuer einen Bereich der App – in der Praxis: fuer eine Route.
+ * Setzt Theme und Akzent fuer einen Bereich der App – in der Praxis: fuer eine
+ * Route.
  *
- * `data-theme` landet auf einem Wrapper-Div, damit daisyUI seine Variablen von
- * dort aufloest und nichts zwischen den Apps ausblutet. Zusaetzlich wird
- * dasselbe Theme an <html> gehaengt: nur so stimmt der Hintergrund ausserhalb
- * des Wrappers (Overscroll-Bereich, native Bedienelemente, Scrollbalken).
+ * Beide Attribute landen auf demselben Wrapper-Div: daisyUI loest seine
+ * Variablen von dort auf, und die Akzentregeln in `themes.css` greifen nur,
+ * wenn `data-theme` und `data-accent` zusammen auf einem Element stehen.
+ * Zusaetzlich wandert dasselbe Paar an <html> – nur so stimmt der Hintergrund
+ * ausserhalb des Wrappers (Overscroll-Bereich, native Bedienelemente,
+ * Scrollbalken).
  */
-export function ThemeScope({ pair, children }: { pair: ThemePair; children: ReactNode }) {
+export function ThemeScope({ accent, children }: { accent: AccentKey; children: ReactNode }) {
   const { scheme } = useTheme();
-  const theme = pair[scheme];
+  const theme = themeName(scheme);
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = theme;
+    root.dataset.accent = accent;
     root.style.colorScheme = scheme;
-  }, [theme, scheme]);
+  }, [theme, accent, scheme]);
 
   // Die Statusleiste auf Android faerbt sich nach <meta name="theme-color">.
   // Der Wert steht nicht fest, sondern faellt aus dem gewaehlten Theme heraus.
@@ -57,7 +61,12 @@ export function ThemeScope({ pair, children }: { pair: ThemePair; children: Reac
   }, [theme]);
 
   return (
-    <div ref={ref} data-theme={theme} className="bg-base-100 text-base-content min-h-dvh">
+    <div
+      ref={ref}
+      data-theme={theme}
+      data-accent={accent}
+      className="bg-base-100 text-base-content min-h-dvh"
+    >
       {children}
     </div>
   );
@@ -65,5 +74,5 @@ export function ThemeScope({ pair, children }: { pair: ThemePair; children: Reac
 
 /** Theme-Scope der Huelle: Landing-Page und Fehlerseiten. */
 export function ShellScope({ children }: { children: ReactNode }) {
-  return <ThemeScope pair={SHELL_THEME}>{children}</ThemeScope>;
+  return <ThemeScope accent={SHELL_ACCENT}>{children}</ThemeScope>;
 }

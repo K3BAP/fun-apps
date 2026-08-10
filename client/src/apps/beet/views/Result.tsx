@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { rankBy } from "@/game/rank";
+import { Container } from "@/ui/Container";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
-import { ResultHeader } from "@/ui/ResultHeader";
+import { AppHero } from "@/ui/AppHero";
 import { ShareButton } from "@/ui/ShareButton";
 import { BlockSheet } from "../components/BlockSheet";
 import { gameTotal, lastRoundTotal, roundTotal } from "../rules";
@@ -27,8 +28,8 @@ export function Result() {
   }));
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-8 safe-bottom">
-      <ResultHeader
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
+      <AppHero
         title={t.finalTitle}
         subtitle={winner ? t.winner(winner.item.name, winner.score) : ""}
       />
@@ -62,6 +63,6 @@ export function Result() {
         players={players}
         rounds={rounds}
       />
-    </div>
+    </Container>
   );
 }

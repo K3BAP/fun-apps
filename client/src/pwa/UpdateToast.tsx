@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { registerSW } from "virtual:pwa-register";
+import { CloseIcon } from "@/ui/icons";
 
 /**
  * Meldet eine neue Version – und laedt erst neu, wenn der Nutzer es sagt.
@@ -33,7 +34,7 @@ export function UpdateToast() {
           onClick={() => setUpdate(null)}
           aria-label="Hinweis schließen"
         >
-          ✕
+          <CloseIcon className="size-4" />
         </button>
       </div>
     </div>

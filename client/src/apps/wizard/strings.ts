@@ -29,8 +29,8 @@ export const t = {
   finishRound: "Runde abschließen",
   finishGame: "Spiel beenden",
 
-  menuBlock: "📋 Block ansehen",
-  menuEnforce: (on: boolean) => `${on ? "✓" : "○"} Ansage-Verbot ${on ? "an" : "aus"}`,
+  menuBlock: "Block ansehen",
+  menuEnforce: "Ansage-Verbot",
 
   blockTitle: "Block",
   blockEmpty: "Noch keine Runde abgeschlossen.",

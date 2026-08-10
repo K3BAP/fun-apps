@@ -87,7 +87,7 @@ export function PlayerSetup({
       <p className="text-base-content/60 text-sm">
         {players.length < min
           ? `Mindestens ${min} Spieler anlegen.`
-          : `${players.length} Spieler · am Griff ≡ ziehen zum Sortieren`}
+          : `${players.length} Spieler · am Griff ziehen zum Sortieren`}
       </p>
     </div>
   );

@@ -5,7 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { APPS } from "./src/apps/manifests";
 
-const INK = "#1c1a17";
+// Der dunkle Grundton aus themes.css (--fa-ink-100 als sRGB). Splash und
+// Statusleiste sollen zur Huelle passen, bevor CSS ueberhaupt geladen ist.
+const INK = "#1b1814";
 
 export default defineConfig({
   plugins: [

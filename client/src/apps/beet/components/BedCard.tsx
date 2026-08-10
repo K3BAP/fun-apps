@@ -1,6 +1,7 @@
 import { Stepper } from "@/ui/Stepper";
 import { bedPoints, type Bed, type Colors } from "../rules";
 import { t } from "../strings";
+import { SegmentedControl } from "@/ui/SegmentedControl";
 
 /** Ein Beet: Farbigkeit, ganze Salate, „keine halben“, Tomate-Paprika-Paare. */
 export function BedCard({
@@ -26,22 +27,17 @@ export function BedCard({
 
       <div className="flex flex-col gap-1">
         <span className="text-base-content/60 text-xs">{t.colorfulness}</span>
-        <div className="join">
-          {t.colorOptions.map((option) => (
-            <button
-              key={option.colors}
-              type="button"
-              onClick={() => onChange({ colors: option.colors as Colors })}
-              aria-pressed={bed.colors === option.colors}
-              className={`btn join-item btn-sm h-auto flex-1 flex-col gap-0 py-1.5 ${
-                bed.colors === option.colors ? "btn-primary" : "btn-outline"
-              }`}
-            >
-              <span className="text-xs font-medium">{option.label}</span>
-              <span className="text-[0.65rem] font-normal opacity-70">{option.points} P</span>
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t.colorfulness}
+          size="sm"
+          value={bed.colors}
+          onChange={(next) => onChange({ colors: next })}
+          options={t.colorOptions.map((option) => ({
+            key: option.colors as Colors,
+            label: option.label,
+            hint: `${option.points} P`,
+          }))}
+        />
       </div>
 
       <div className="flex items-center justify-between gap-3">

@@ -21,9 +21,11 @@ export default function WizardApp() {
       menu={(store) =>
         store.state.phase === "play"
           ? [
-              { label: t.menuBlock, onSelect: () => setBlockOpen(true) },
+              { id: "block", icon: "📋", label: t.menuBlock, onSelect: () => setBlockOpen(true) },
               {
-                label: t.menuEnforce(store.state.enforce),
+                id: "enforce",
+                label: t.menuEnforce,
+                checked: store.state.enforce,
                 onSelect: () =>
                   store.dispatch({ type: "setEnforce", enforce: !store.state.enforce }),
               },

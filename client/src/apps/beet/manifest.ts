@@ -8,8 +8,8 @@ const manifest: AppManifest = {
   emoji: "🥬",
   description:
     "Punktezähler zum Brettspiel „Ab ins Beet“: Beetpunkte per geführtem Rechner, automatischer Bonus, Tierkarten – über drei Durchgänge zum Endstand.",
-  // Die naechstliegenden eingebauten Themes zum bisherigen Garten-CSS.
-  themes: { light: "garden", dark: "forest" },
+  // Blattgruen, nach dem --leaf #3f8f3a des alten Garten-CSS.
+  accent: "beet",
   players: { min: 2, max: 4 },
   multiplayer: true,
 };

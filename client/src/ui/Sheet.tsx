@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { CloseIcon } from "./icons";
 
 /**
  * Bottom-Sheet auf Basis von <dialog>.
@@ -15,6 +16,7 @@ export function Sheet({
   description,
   children,
   footer,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -22,6 +24,8 @@ export function Sheet({
   description?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  /** Fuer Inhalte mit einer Spalte je Spieler: auf grossen Displays breiter. */
+  wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -42,7 +46,11 @@ export function Sheet({
         if (event.target === ref.current) onClose();
       }}
     >
-      <div className="modal-box border-base-300 max-h-[85dvh] border-t sm:border">
+      <div
+        className={`modal-box border-base-300 max-h-[85dvh] border-t sm:border ${
+          wide ? "sm:max-w-3xl" : ""
+        }`}
+      >
         <div className="mb-3 flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold">{title}</h2>
@@ -54,7 +62,7 @@ export function Sheet({
             onClick={onClose}
             aria-label="Schließen"
           >
-            ✕
+            <CloseIcon className="size-4" />
           </button>
         </div>
 

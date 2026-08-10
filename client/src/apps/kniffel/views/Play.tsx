@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMySeatIndex } from "@/sync/useMySeat";
+import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { EntrySheet, type EntryTarget } from "../components/EntrySheet";
@@ -22,6 +23,7 @@ export function Play() {
 
   return (
     <GameLayout
+      width="table"
       header={
         <GameHeader
           primary={t.round(currentRound(sheets), TOTAL_FIELDS)}
@@ -39,13 +41,17 @@ export function Play() {
         </button>
       }
     >
-      <ScoreTable
-        players={players}
-        sheets={sheets}
-        activeIdx={activeIndex(sheets)}
-        editableIndex={editableIndex}
-        onPick={(player, cat) => setTarget({ player, cat })}
-      />
+      {/* Die Tabelle waechst mit der Spielerzahl. Der Container begrenzt sie auf
+          dem Desktop, das innere `overflow-x-auto` schiebt sie auf dem Handy. */}
+      <Container className="overflow-x-auto">
+        <ScoreTable
+          players={players}
+          sheets={sheets}
+          activeIdx={activeIndex(sheets)}
+          editableIndex={editableIndex}
+          onPick={(player, cat) => setTarget({ player, cat })}
+        />
+      </Container>
 
       <EntrySheet
         target={target}

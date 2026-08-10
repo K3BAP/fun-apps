@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { CODE_LENGTH, isValidCode, type RoomPhase, type Seat } from "@fun/shared";
 import type { SyncSpec } from "@/game/types";
+import { PlayerRow } from "@/ui/PlayerRow";
 import { Sheet } from "@/ui/Sheet";
 import { useRoom } from "./context";
 
@@ -53,11 +54,7 @@ function SeatList() {
       {snapshot.room.seats.map((seat: Seat) => {
         const mine = snapshot.mySeats.includes(seat.id);
         return (
-          <li
-            key={seat.id}
-            style={{ borderInlineStartColor: seat.color }}
-            className="bg-base-200 flex items-center gap-3 rounded-lg border-s-4 px-3 py-2"
-          >
+          <PlayerRow as="li" key={seat.id} accent={seat.color}>
             <span className="flex min-w-0 flex-1 flex-col leading-tight">
               <span className="truncate font-medium">{seat.name}</span>
               <span className="text-base-content/60 text-xs">
@@ -89,7 +86,7 @@ function SeatList() {
                 </button>
               )
             )}
-          </li>
+          </PlayerRow>
         );
       })}
     </ul>

@@ -1,20 +1,35 @@
 /**
- * Jede App bringt ein Theme-Paar mit: eins fuer hell, eins fuer dunkel. Welche
- * der beiden Varianten gilt, entscheidet die *globale* Einstellung (System /
- * Hell / Dunkel) – die Apps unterscheiden sich in der Farbwelt, nicht darin, ob
- * gerade Nacht ist.
+ * Die Gegenstelle zu `src/themes.css`.
  *
- * Wichtig: Jedes hier benutzte Theme muss auch in src/index.css im
- * `@plugin "daisyui"`-Block stehen, sonst wird sein CSS gar nicht erzeugt.
+ * Es gibt genau zwei Themes – `fa-light` und `fa-dark` –, die Flaechen, Radien
+ * und Signalfarben festlegen. Was eine App farblich ausmacht, ist allein ihr
+ * Akzent; die zugehoerigen CSS-Regeln stehen am Ende von `themes.css`.
  */
-export type ThemePair = {
-  readonly light: string;
-  readonly dark: string;
-};
 
-/** Schwarz + Gold – die Optik der bisherigen Landing-Page. */
-export const SHELL_THEME: ThemePair = { light: "silk", dark: "luxury" };
+export type AccentKey = "shell" | "kniffel" | "wizard" | "beet" | "qwixx";
 
-export function resolveTheme(pair: ThemePair, scheme: "light" | "dark"): string {
-  return pair[scheme];
+export type ColorScheme = "light" | "dark";
+
+/** Landing-Page und Fehlerseiten: Gold auf Tinte, wie die bisherige Huelle. */
+export const SHELL_ACCENT: AccentKey = "shell";
+
+export function themeName(scheme: ColorScheme): string {
+  return scheme === "dark" ? "fa-dark" : "fa-light";
 }
+
+/**
+ * Die Akzentfarbe als CSS-Wert – fuer die wenigen Stellen, die eine App-Farbe
+ * ausserhalb ihres eigenen Theme-Bereichs zeigen (die Kacheln der Landing-Page
+ * liegen im Shell-Theme, sollen aber die Farbe ihrer App tragen).
+ */
+export function accentColor(accent: AccentKey, scheme: ColorScheme): string {
+  return `var(--fa-${ACCENT_HUE[accent]}${scheme === "light" ? "-lt" : ""})`;
+}
+
+const ACCENT_HUE: Record<AccentKey, string> = {
+  shell: "gold",
+  kniffel: "gold",
+  wizard: "plum",
+  beet: "leaf",
+  qwixx: "slate",
+};

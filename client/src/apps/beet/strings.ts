@@ -49,7 +49,7 @@ export const t = {
   finishRound: "Durchgang abschließen",
   finishGame: "Spiel beenden 🏆",
 
-  menuBlock: "📋 Block ansehen",
+  menuBlock: "Block ansehen",
   blockTitle: "Block",
   blockEmpty: "Noch kein Durchgang abgeschlossen.",
   blockLegend: "je Zelle: Beet + Bonus + Tier · darunter die Laufsumme",

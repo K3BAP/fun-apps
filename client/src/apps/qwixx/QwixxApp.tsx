@@ -35,12 +35,17 @@ export default function QwixxApp() {
         const evaluable = canEvaluate(store.state);
         return [
           {
+            id: "overview",
+            icon: "📋",
             label: store.state.mode === "solo" ? t.menuOverviewSolo : t.menuOverviewShared,
             onSelect: () => setOverviewOpen(true),
           },
-          { label: t.menuDice, onSelect: () => setDiceOpen(true) },
+          { id: "dice", icon: "🎲", label: t.menuDice, onSelect: () => setDiceOpen(true) },
           {
-            label: evaluable ? t.menuEvaluate : t.menuEvaluateLocked,
+            id: "evaluate",
+            icon: evaluable ? "🏁" : "🔒",
+            label: t.menuEvaluate,
+            note: evaluable ? undefined : t.menuEvaluateLockedNote,
             disabled: !evaluable,
             onSelect: () => store.dispatch({ type: "evaluate" }),
           },
