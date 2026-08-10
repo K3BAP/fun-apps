@@ -15,7 +15,7 @@ import {
 } from "../rules";
 import { t } from "../strings";
 
-const CAT_COL = "sticky start-0 z-10 bg-base-100 border-base-300 border-e";
+const CAT_COL = "sticky start-0 z-10 min-w-36 bg-base-100 border-base-300 border-e sm:min-w-44";
 const CELL = "border-base-300 border-b px-2 py-1.5 text-center tabular-nums";
 
 function CategoryLabel({ label, hint }: { label: string; hint: string }) {
@@ -159,7 +159,10 @@ export function ScoreTable({
     ));
 
   return (
-    <table className="w-full border-separate border-spacing-0 text-sm">
+    // Auf dem Handy fuellt die Tabelle den Bildschirm (`min-w-full`), ab Tablet
+    // steht sie in ihrer natuerlichen Breite zentriert (`sm:min-w-0 mx-auto`).
+    // Sonst zerrt eine Partie zu zweit dreizehn Zeilen ueber den ganzen Monitor.
+    <table className="mx-auto w-max min-w-full border-separate border-spacing-0 text-sm sm:min-w-0">
       <thead>
         <tr>
           <th
@@ -171,7 +174,7 @@ export function ScoreTable({
             <th
               key={player.id}
               style={{ borderBottomColor: player.color }}
-              className={`bg-base-100 sticky top-0 z-10 min-w-20 border-b-2 px-2 py-2 ${
+              className={`bg-base-100 sticky top-0 z-10 min-w-20 border-b-2 px-2 py-2 sm:min-w-24 ${
                 index === activeIdx ? "bg-primary/5" : ""
               }`}
             >

@@ -21,6 +21,7 @@ export function BlockSheet({
       onClose={onClose}
       title={t.blockTitle}
       description={rounds.length > 0 ? t.blockLegend : undefined}
+      wide
     >
       {rounds.length === 0 ? (
         <p className="text-base-content/60 py-4 text-center">{t.blockEmpty}</p>

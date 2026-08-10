@@ -16,7 +16,7 @@ export function BlockSheet({
   rounds: readonly RoundRecord[];
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={t.blockTitle}>
+    <Sheet open={open} onClose={onClose} title={t.blockTitle} wide>
       {rounds.length === 0 ? (
         <p className="text-base-content/60 py-4 text-center">{t.blockEmpty}</p>
       ) : (

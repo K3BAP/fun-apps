@@ -1,4 +1,5 @@
 import { rankBy } from "@/game/rank";
+import { Container } from "@/ui/Container";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
 import { ResultHeader } from "@/ui/ResultHeader";
 import { ROW_HEX } from "../colors";
@@ -141,7 +142,7 @@ export function Result({ onShowOverview }: { onShowOverview: () => void }) {
   const solo = store.state.mode === "solo";
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-8 safe-bottom">
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       {solo ? <SoloResult /> : <SharedResult />}
 
       <div className="flex flex-col gap-2">
@@ -165,6 +166,6 @@ export function Result({ onShowOverview }: { onShowOverview: () => void }) {
           {solo ? t.backToStart : t.newGame}
         </button>
       </div>
-    </div>
+    </Container>
   );
 }

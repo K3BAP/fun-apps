@@ -6,7 +6,7 @@ import { ColorModeToggle } from "@/ui/ColorModeToggle";
 export default function Home() {
   return (
     <ShellScope>
-      <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-8 px-4 safe-top safe-bottom">
+      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-8 px-4 safe-top safe-bottom">
         <header className="flex flex-col items-center gap-3 pt-8 text-center">
           <div className="text-5xl" aria-hidden="true">
             🎲
@@ -19,7 +19,7 @@ export default function Home() {
           <ColorModeToggle className="mt-2" />
         </header>
 
-        <nav aria-label="Apps" className="flex flex-col gap-3">
+        <nav aria-label="Apps" className="grid gap-3 sm:grid-cols-2">
           {APPS.map((app) => (
             <Link
               key={app.id}

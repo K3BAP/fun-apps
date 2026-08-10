@@ -59,7 +59,7 @@ function Cell({
       style={style}
       aria-label={`${ROW_LABEL[rowKey]} ${number}${color === rowKey ? "" : ` · ${ROW_LABEL[color]}`}`}
       aria-pressed={state === "marked"}
-      className={`grid aspect-square min-w-0 place-items-center rounded border-2 text-[0.7rem] font-bold tabular-nums transition-opacity ${
+      className={`grid aspect-square min-w-0 place-items-center rounded border-2 text-[0.7rem] font-bold tabular-nums transition-opacity sm:text-sm ${
         state === "skipped" ? "line-through opacity-40" : ""
       } ${state === "off" || state === "lockedOut" ? "opacity-40" : ""}`}
     >
@@ -162,7 +162,7 @@ export function QwixxSheet({
               </span>
             </span>
 
-            <div className="grid min-w-0 flex-1 grid-cols-12 gap-0.5">
+            <div className="grid min-w-0 flex-1 grid-cols-12 gap-0.5 sm:gap-1">
               {Array.from({ length: CELLS }, (_, index) => (
                 <Cell
                   key={index}

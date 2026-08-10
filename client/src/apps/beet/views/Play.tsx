@@ -1,4 +1,5 @@
 import { useSeatReady, type SeatReady } from "@/sync/useMySeat";
+import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -274,11 +275,11 @@ export function Play() {
         }))}
       />
 
-      <section className="mx-auto flex max-w-lg flex-col gap-3 px-3 pb-4">
+      <Container className="flex flex-col gap-3 px-3 pb-4 sm:px-4">
         {state.step === "beet" && <BeetStepView seatIndex={seatIndex} />}
         {state.step === "bonus" && <BonusStepView />}
         {state.step === "tier" && <TierStepView seatIndex={seatIndex} />}
-      </section>
+      </Container>
     </GameLayout>
   );
 }

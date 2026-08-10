@@ -1,4 +1,5 @@
 import type { Player, PlayerId } from "@/game/players";
+import { Container } from "./Container";
 
 export type Standing = {
   player: Player;
@@ -22,7 +23,7 @@ export function StandingsChips({
   onSelect?: (id: PlayerId) => void;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto px-3 py-2">
+    <Container className="flex gap-2 overflow-x-auto px-3 py-2 sm:px-4">
       {standings.map(({ player, score }) => {
         const content = (
           <>
@@ -58,6 +59,6 @@ export function StandingsChips({
           </div>
         );
       })}
-    </div>
+    </Container>
   );
 }

@@ -1,3 +1,4 @@
+import { Container } from "@/ui/Container";
 import { GameHero } from "@/ui/GameHero";
 import { PlayerSetup } from "@/ui/PlayerSetup";
 import { Toggle } from "@/ui/Toggle";
@@ -12,7 +13,7 @@ export function Setup() {
   const { min, max } = manifest.players;
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-8 safe-bottom">
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       <GameHero tagline={t.tagline} />
 
       <section className="card card-border bg-base-200 border-base-300">
@@ -49,6 +50,6 @@ export function Setup() {
       >
         {t.start}
       </button>
-    </div>
+    </Container>
   );
 }

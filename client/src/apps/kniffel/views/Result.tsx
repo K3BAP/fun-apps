@@ -1,4 +1,5 @@
 import { rankBy } from "@/game/rank";
+import { Container } from "@/ui/Container";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
 import { ResultHeader } from "@/ui/ResultHeader";
 import { ShareButton } from "@/ui/ShareButton";
@@ -29,7 +30,7 @@ export function Result() {
   });
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-5 px-4 pb-8 safe-bottom">
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       <ResultHeader
         title={t.finalTitle}
         subtitle={winner ? t.winner(winner.item.name, winner.score) : ""}
@@ -54,6 +55,6 @@ export function Result() {
           {t.newGame}
         </button>
       </div>
-    </div>
+    </Container>
   );
 }

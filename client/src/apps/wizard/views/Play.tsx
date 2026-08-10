@@ -1,3 +1,4 @@
+import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -96,7 +97,7 @@ export function Play() {
         leaderId={leaderId}
       />
 
-      <section className="mx-auto flex max-w-lg flex-col gap-3 px-3 pb-4">
+      <Container className="flex flex-col gap-3 px-3 pb-4 sm:px-4">
         <div className="flex flex-col gap-1">
           <StepTabs step={step} />
           <h2 className="text-xl font-bold">{step === "bid" ? t.bidTitle : t.trickTitle}</h2>
@@ -163,7 +164,7 @@ export function Play() {
             {tricksOk ? " ✓" : ` — ${t.trickNeeded(round)}`}
           </p>
         )}
-      </section>
+      </Container>
     </GameLayout>
   );
 }

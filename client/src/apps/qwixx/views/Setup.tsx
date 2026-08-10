@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NAME_MAX_LENGTH } from "@/game/players";
+import { Container } from "@/ui/Container";
 import { GameHero } from "@/ui/GameHero";
 import { PlayerSetup } from "@/ui/PlayerSetup";
 import { Toggle } from "@/ui/Toggle";
@@ -108,7 +109,7 @@ export function Setup() {
   const solo = mode === "solo";
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-8 safe-bottom">
+    <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       <GameHero tagline={t.tagline} />
 
       <div className="flex flex-col gap-1">
@@ -161,6 +162,6 @@ export function Setup() {
       </div>
 
       {solo ? <SoloSetup /> : <SharedSetup />}
-    </div>
+    </Container>
   );
 }

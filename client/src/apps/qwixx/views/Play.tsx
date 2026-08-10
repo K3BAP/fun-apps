@@ -1,5 +1,6 @@
 import { useHaptics } from "@/hooks/useHaptics";
 import { useMySeatIndex } from "@/sync/useMySeat";
+import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
 import { StandingsChips } from "@/ui/StandingsChips";
@@ -92,7 +93,7 @@ export function Play() {
         />
       )}
 
-      <div className="mx-auto max-w-lg px-3 pt-2 pb-4">
+      <Container className="px-3 pt-2 pb-4 sm:px-4">
         <QwixxSheet
           sheet={sheet}
           variant={state.variant}
@@ -113,7 +114,7 @@ export function Play() {
             store.dispatch({ type: "setPenalty", player: player.id, box });
           }}
         />
-      </div>
+      </Container>
     </GameLayout>
   );
 }

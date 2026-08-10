@@ -24,7 +24,7 @@ export function OverviewSheet({
   const cell = "border-base-300 border-b px-2 py-1 text-center leading-tight";
 
   return (
-    <Sheet open={open} onClose={onClose} title={t.overviewTitle}>
+    <Sheet open={open} onClose={onClose} title={t.overviewTitle} wide>
       <div className="overflow-x-auto">
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
