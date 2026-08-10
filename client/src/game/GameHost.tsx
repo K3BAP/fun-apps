@@ -7,7 +7,7 @@ import { ThemeScope } from "@/theme/ThemeProvider";
 import { MenuSheet } from "@/ui/MenuSheet";
 import { GameContext } from "./context";
 import type { GameDefinition, MenuItem } from "./types";
-import { useGameStore } from "./useGameStore";
+import { useGameStore, type GameStore } from "./useGameStore";
 
 /**
  * „Bildschirm anlassen“ gilt geraeteweit, nicht pro Spiel. Frueher lag die
@@ -29,8 +29,11 @@ export function GameHost<S, A>({
 }: {
   definition: GameDefinition<S, A>;
   manifest: AppManifest;
-  /** Zusaetzliche Menuepunkte, erscheinen vor den Standard-Eintraegen. */
-  menu?: MenuItem[];
+  /**
+   * Zusaetzliche Menuepunkte, erscheinen vor den Standard-Eintraegen. Als
+   * Funktion, weil sie meist vom Spielstand abhaengen – den haelt erst der Host.
+   */
+  menu?: (store: GameStore<S, A>) => MenuItem[];
   children: ReactNode;
 }) {
   const store = useGameStore(definition);
@@ -55,7 +58,7 @@ export function GameHost<S, A>({
 
   if (definition.undo) {
     standardItems.push({
-      label: "↩︎ Rückgängig",
+      label: `↩︎ ${definition.undoLabel ?? "Rückgängig"}`,
       disabled: !store.canUndo,
       onSelect: store.undo,
     });
@@ -92,7 +95,7 @@ export function GameHost<S, A>({
         <MenuSheet
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
-          items={[...(menu ?? []), ...standardItems]}
+          items={[...(menu?.(store) ?? []), ...standardItems]}
         />
       </ThemeScope>
     </GameContext>

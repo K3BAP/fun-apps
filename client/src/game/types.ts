@@ -32,6 +32,8 @@ export interface GameDefinition<S, A> {
 
   /** Undo/Redo im ⋯-Menue anbieten? Standard: nein. */
   readonly undo?: boolean;
+  /** Was genau zurueckgenommen wird – praeziser als ein blosses „Rückgängig“. */
+  readonly undoLabel?: string;
 }
 
 export type MenuItem = {

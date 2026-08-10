@@ -20,6 +20,8 @@ export const APPS: readonly AppManifest[] = [kniffel, wizard, beet, qwixx];
  */
 export const APP_VIEWS: Partial<Record<AppId, LazyExoticComponent<ComponentType>>> = {
   kniffel: lazy(() => import("./kniffel/KniffelApp")),
+  wizard: lazy(() => import("./wizard/WizardApp")),
+  beet: lazy(() => import("./beet/BeetApp")),
 };
 
 export function manifestFor(id: AppId): AppManifest {
