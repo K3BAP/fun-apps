@@ -28,6 +28,28 @@
   [role="button"]:not([aria-disabled="true"]) {
     touch-action: manipulation;
   }
+
+  /*
+    Ein Fokusring fuer alles, was mit der Tastatur erreichbar ist – vorher gab
+    es ihn nur auf den Kacheln der Startseite. `:focus-visible` heisst: nur
+    wenn tatsaechlich per Tastatur navigiert wird, nicht bei jedem Fingertipp.
+  */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/*
+  daisyUI blendet deaktivierte Knoepfe auf 20% Deckkraft. In dieser App traegt
+  gerade der gesperrte Knopf die Begruendung – „Noch 13 Felder offen",
+  „Auswerten ist gesperrt, bis …“ –, und die war auf dem hellen Papier kaum zu
+  lesen. Ausserhalb jeder Layer, damit die Regel die von daisyUI schlaegt.
+*/
+.btn:disabled,
+.btn[disabled],
+.btn.btn-disabled {
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
 }
 
 /*
