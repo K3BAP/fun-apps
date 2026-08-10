@@ -1,4 +1,4 @@
-import type { ThemePair } from "../theme/themes";
+import type { AccentKey } from "../theme/themes";
 
 export type AppId = "kniffel" | "wizard" | "beet" | "qwixx";
 
@@ -17,7 +17,8 @@ export type AppManifest = {
   readonly subtitle: string;
   readonly emoji: string;
   readonly description: string;
-  readonly themes: ThemePair;
+  /** Die eine Farbe, die diese App von den anderen unterscheidet. */
+  readonly accent: AccentKey;
   readonly players: { readonly min: number; readonly max: number };
   /** Ist fuer diese App der Mehrgeraete-Modus vorgesehen? */
   readonly multiplayer: boolean;

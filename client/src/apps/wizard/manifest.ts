@@ -8,8 +8,8 @@ const manifest: AppManifest = {
   emoji: "🧙",
   description:
     "Punkteblock zum Kartenspiel Wizard: Ansage & Stiche pro Runde eintragen – Wertung, laufender Stand und Endrangliste rechnet die App.",
-  // Violett/Magenta in beiden Richtungen – passt zum 🧙, ohne zu schreien.
-  themes: { light: "fantasy", dark: "dracula" },
+  // Gedecktes Pflaume – passt zum 🧙, ohne zu schreien.
+  accent: "wizard",
   players: { min: 2, max: 6 },
   multiplayer: false,
 };

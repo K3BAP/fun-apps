@@ -1,35 +1,7 @@
 @import "tailwindcss";
 
-/*
-  Nur die Themes laden, die auch wirklich benutzt werden – jedes daisyUI-Theme ist
-  ein Block CSS-Variablen, die ungenutzten waeren totes Gewicht. Die Zuordnung
-  App -> Theme-Paar steht in src/theme/themes.ts; beide Listen muessen zusammen
-  gepflegt werden.
-*/
-@plugin "daisyui" {
-  themes:
-    silk --default,
-    luxury,
-    caramellatte,
-    coffee,
-    fantasy,
-    dracula,
-    garden,
-    forest,
-    winter,
-    night;
-}
-
-/*
-  Themen-unabhaengige Farben. Die vier Qwixx-Reihen sind Spielmaterial, keine
-  Designentscheidung – sie muessen in jedem Theme gleich aussehen.
-*/
-@theme {
-  --color-row-red: #c0392b;
-  --color-row-yellow: #c8961f;
-  --color-row-green: #3f7f47;
-  --color-row-blue: #3a6ea5;
-}
+/* Farbsystem und Themes – siehe die Erklaerung dort. */
+@import "./themes.css";
 
 @layer base {
   html {

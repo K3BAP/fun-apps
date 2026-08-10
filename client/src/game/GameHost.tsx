@@ -154,7 +154,7 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
 
   return (
     <GameContext value={contextValue}>
-      <ThemeScope pair={manifest.themes}>
+      <ThemeScope accent={manifest.accent}>
         {children}
         <MenuSheet
           open={menuOpen}

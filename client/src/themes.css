@@ -1,0 +1,197 @@
+/* ===========================================================================
+ * Das Farbsystem: ein Grundgeruest, fuenf Akzente.
+ *
+ * Frueher benutzte jede App ein anderes eingebautes daisyUI-Theme. Das war
+ * schnell zusammengeklickt, aber die Themes stammen von verschiedenen Autoren
+ * und passen nicht zusammen: `garden` faerbt seine Primaerfarbe mit
+ * `oklch(62% 0.278 3.8)` – Neon-Pink in einer Garten-App – und `forest` macht
+ * Buttons mit `--radius-field: 2rem` zu Pillen, `garden` mit `0.5rem` zu
+ * Rechtecken. Beim Umschalten von hell auf dunkel aenderte sich also die *Form*
+ * der Bedienelemente.
+ *
+ * Stattdessen gibt es hier genau zwei Themes – Papier (hell) und Tinte
+ * (dunkel) – die Flaechen, Abstaende, Radien und Signalfarben festlegen. Was
+ * die vier Apps unterscheidet, ist eine einzige Farbe: die Akzentfarbe, unten
+ * als `[data-accent]` gesetzt. Das entspricht dem alten statischen Design, wo
+ * drei der vier Apps buchstaeblich dieselbe Schwarz-Gold-Palette hatten.
+ *
+ * Alle Werte stehen in oklch, weil dort die erste Zahl die *wahrgenommene*
+ * Helligkeit ist: `oklch(72% ...)` sieht in jedem Farbton gleich hell aus. So
+ * lassen sich Akzente austauschen, ohne dass der Kontrast kippt.
+ * ======================================================================== */
+
+@plugin "daisyui" {
+  /* Kein eingebautes Theme laden – wir bringen unsere eigenen mit. */
+  themes: false;
+}
+
+:root {
+  /* --- Papier: warmes Creme statt Weiss. Nach --paper #fffdf5 und
+         --cream #f6f0e4 der alten Apps. ------------------------------------ */
+  --fa-paper-100: oklch(98.5% 0.008 85); /* Seite */
+  --fa-paper-200: oklch(95.5% 0.012 85); /* Karten, liegen auf der Seite */
+  --fa-paper-300: oklch(90% 0.016 85); /* Raender, Trennlinien */
+  --fa-paper-ink: oklch(28% 0.02 70); /* Schrift */
+
+  /* --- Tinte: das alte --ink #1c1a17 / --ink-2 #2a2723 / --cream #f6f0e4.
+         Karten sind hier *heller* als die Seite, wie im alten Design, wo sie
+         als #ffffff0f darauflagen. ----------------------------------------- */
+  --fa-ink-100: oklch(21% 0.008 70);
+  --fa-ink-200: oklch(25% 0.009 70);
+  --fa-ink-300: oklch(31% 0.01 70);
+  --fa-ink-text: oklch(92% 0.018 85);
+
+  /* --- Die fuenf Akzente, je einmal fuer hellen und dunklen Grund.
+         Das Chroma ist auf 0.13 gedeckelt; zum Vergleich: das abgeloeste
+         `garden` lag bei 0.278. ------------------------------------------- */
+  --fa-gold: oklch(74% 0.09 78); /* #c9a15a, die Hausfarbe */
+  --fa-gold-lt: oklch(58% 0.1 68);
+  --fa-plum: oklch(76% 0.1 315);
+  --fa-plum-lt: oklch(50% 0.12 315);
+  --fa-leaf: oklch(74% 0.13 142); /* #7cc24a */
+  --fa-leaf-lt: oklch(53% 0.12 148); /* #3f8f3a */
+  --fa-slate: oklch(76% 0.07 250);
+  --fa-slate-lt: oklch(50% 0.075 250);
+
+  /* --- Signalfarben. Fuer beide Grundgeruste getrennt, damit „gut" und
+         „schlecht" auf Papier wie auf Tinte lesbar bleiben. Die Farbtoene
+         stammen aus dem alten --green #4a7a4d und --red #b5533f. ----------- */
+  --fa-success: oklch(72% 0.12 148);
+  --fa-success-lt: oklch(50% 0.1 148);
+  --fa-warning: oklch(80% 0.12 75);
+  --fa-warning-lt: oklch(60% 0.12 62);
+  --fa-error: oklch(70% 0.14 32);
+  --fa-error-lt: oklch(52% 0.14 32);
+  --fa-info: oklch(76% 0.08 245);
+  --fa-info-lt: oklch(52% 0.08 245);
+
+  /* Schrift auf einer Akzentflaeche. Helle Akzente tragen Tinte, dunkle Papier. */
+  --fa-on-light-accent: oklch(99% 0.005 85);
+  --fa-on-dark-accent: oklch(21% 0.01 70);
+}
+
+/* ---------------------------------------------------------------------------
+ * Die beiden Themes. Bis auf die Flaechen sind sie identisch aufgebaut – und
+ * die Formtoken (Radien, Groessen, Rahmen) sind absichtlich Zeichen fuer
+ * Zeichen gleich, damit beim Umschalten wirklich nur die Farbe wechselt.
+ *
+ * --size-field 0.28125rem ergibt beim normalen `btn` 44px Hoehe; das ist die
+ * Untergrenze fuer eine Flaeche, die mit dem Daumen getroffen werden soll.
+ * ------------------------------------------------------------------------ */
+
+@plugin "daisyui/theme" {
+  name: "fa-light";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: var(--fa-paper-100);
+  --color-base-200: var(--fa-paper-200);
+  --color-base-300: var(--fa-paper-300);
+  --color-base-content: var(--fa-paper-ink);
+
+  --color-primary: var(--fa-gold-lt);
+  --color-primary-content: var(--fa-on-light-accent);
+  --color-secondary: var(--fa-slate-lt);
+  --color-secondary-content: var(--fa-on-light-accent);
+  --color-accent: var(--fa-leaf-lt);
+  --color-accent-content: var(--fa-on-light-accent);
+  --color-neutral: var(--fa-ink-200);
+  --color-neutral-content: var(--fa-ink-text);
+
+  --color-info: var(--fa-info-lt);
+  --color-info-content: var(--fa-on-light-accent);
+  --color-success: var(--fa-success-lt);
+  --color-success-content: var(--fa-on-light-accent);
+  --color-warning: var(--fa-warning-lt);
+  --color-warning-content: var(--fa-on-light-accent);
+  --color-error: var(--fa-error-lt);
+  --color-error-content: var(--fa-on-light-accent);
+
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.28125rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "fa-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: var(--fa-ink-100);
+  --color-base-200: var(--fa-ink-200);
+  --color-base-300: var(--fa-ink-300);
+  --color-base-content: var(--fa-ink-text);
+
+  --color-primary: var(--fa-gold);
+  --color-primary-content: var(--fa-on-dark-accent);
+  --color-secondary: var(--fa-slate);
+  --color-secondary-content: var(--fa-on-dark-accent);
+  --color-accent: var(--fa-leaf);
+  --color-accent-content: var(--fa-on-dark-accent);
+  --color-neutral: var(--fa-ink-300);
+  --color-neutral-content: var(--fa-ink-text);
+
+  --color-info: var(--fa-info);
+  --color-info-content: var(--fa-on-dark-accent);
+  --color-success: var(--fa-success);
+  --color-success-content: var(--fa-on-dark-accent);
+  --color-warning: var(--fa-warning);
+  --color-warning-content: var(--fa-on-dark-accent);
+  --color-error: var(--fa-error);
+  --color-error-content: var(--fa-on-dark-accent);
+
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.28125rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Die Akzente. `ThemeScope` setzt `data-theme` und `data-accent` auf dasselbe
+ * Element, deshalb schlagen diese Regeln (Spezifitaet 0,2,0 und ausserhalb
+ * jeder Layer) die Vorgabe aus dem Theme-Block. Eine neue App braucht hier
+ * zwei Zeilen – mehr Farbe hat sie nicht.
+ * ------------------------------------------------------------------------ */
+
+[data-theme="fa-light"][data-accent="shell"],
+[data-theme="fa-light"][data-accent="kniffel"] {
+  --color-primary: var(--fa-gold-lt);
+}
+[data-theme="fa-dark"][data-accent="shell"],
+[data-theme="fa-dark"][data-accent="kniffel"] {
+  --color-primary: var(--fa-gold);
+}
+
+[data-theme="fa-light"][data-accent="wizard"] {
+  --color-primary: var(--fa-plum-lt);
+}
+[data-theme="fa-dark"][data-accent="wizard"] {
+  --color-primary: var(--fa-plum);
+}
+
+[data-theme="fa-light"][data-accent="beet"] {
+  --color-primary: var(--fa-leaf-lt);
+  --color-accent: var(--fa-gold-lt);
+}
+[data-theme="fa-dark"][data-accent="beet"] {
+  --color-primary: var(--fa-leaf);
+  --color-accent: var(--fa-gold);
+}
+
+/* Qwixx bekommt bewusst den leisesten Akzent: die vier Reihenfarben des
+   Spielblocks sollen das Bunteste auf dem Bildschirm bleiben. */
+[data-theme="fa-light"][data-accent="qwixx"] {
+  --color-primary: var(--fa-slate-lt);
+}
+[data-theme="fa-dark"][data-accent="qwixx"] {
+  --color-primary: var(--fa-slate);
+}
