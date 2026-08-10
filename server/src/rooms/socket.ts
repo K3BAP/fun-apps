@@ -9,11 +9,10 @@ import {
   type ServerMsg,
 } from "@fun/shared";
 import {
-  claim,
   evaluateBarrier,
+  joinRoom,
+  leaveRoom,
   putSeat,
-  release,
-  seatsOwnedBy,
   setOnline,
   setReady,
   setRoom,
@@ -79,17 +78,21 @@ export function attachRooms(server: Server): WebSocketServer {
         const found = getRoom(normalizeCode(msg.code));
         if (!found) return fail(socket, "no_room", "Diesen Raum gibt es nicht (mehr).");
 
+        // Anmelden und beitreten sind ein Schritt: schlaegt das Beitreten fehl
+        // (Raum voll, Spiel laeuft schon), bleibt die Verbindung ohne Raum.
+        const joined = joinRoom(found.state, msg.device, msg.name);
+        if (!joined.ok) return fail(socket, joined.code, joined.msg);
+
         room = found;
         device = msg.device;
         // Eine zweite Verbindung desselben Geraets loest die erste ab.
         room.sockets.get(device)?.close();
         room.sockets.set(device, socket);
-        setOnline(room.state, device, true);
 
         send(socket, {
           t: "snapshot",
           room: room.state,
-          you: { device, seats: seatsOwnedBy(room.state, device) },
+          you: { device, seat: joined.value.id },
         });
         broadcast(room, { t: "room", room: room.state }, device);
         return;
@@ -103,13 +106,8 @@ export function attachRooms(server: Server): WebSocketServer {
       };
 
       switch (msg.t) {
-        case "claim":
-          return report(claim(room.state, device, msg.seat), () => {
-            broadcast(room!, { t: "room", room: room!.state });
-          });
-
-        case "release":
-          return report(release(room.state, device, msg.seat), () => {
+        case "leave":
+          return report(leaveRoom(room.state, device), () => {
             broadcast(room!, { t: "room", room: room!.state });
           });
 

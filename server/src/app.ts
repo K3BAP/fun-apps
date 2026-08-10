@@ -18,9 +18,9 @@ function isCreateBody(value: unknown): value is CreateRoomBody {
     typeof body?.gameId === "string" &&
     typeof body.gameVersion === "number" &&
     typeof body.host === "string" &&
-    Array.isArray(body.seats) &&
-    body.seats.length > 0 &&
-    body.seats.every((seat) => typeof seat?.name === "string")
+    typeof body.maxSeats === "number" &&
+    body.maxSeats >= 1 &&
+    body.maxSeats <= 16
   );
 }
 
@@ -42,8 +42,9 @@ export function createApp(): Express {
     res.status(201).json({ code: room.state.code });
   });
 
-  // Vor dem Beitreten: welches Spiel, welche Plaetze sind noch frei? Das reicht
-  // fuer den Beitritts-Bildschirm, ohne den Spielstand herauszugeben.
+  // Vor dem Beitreten: zu welchem Spiel gehoert der Code, wer ist schon da, ist
+  // noch Platz? Das reicht fuer den Beitritts-Bildschirm, ohne den Spielstand
+  // herauszugeben.
   app.get("/api/rooms/:code", (req, res) => {
     const code = normalizeCode(req.params.code);
     const room = isValidCode(code) ? getRoom(code) : undefined;
@@ -55,11 +56,9 @@ export function createApp(): Express {
       code: room.state.code,
       gameId: room.state.gameId,
       gameVersion: room.state.gameVersion,
-      seats: room.state.seats.map((seat) => ({
-        id: seat.id,
-        name: seat.name,
-        taken: seat.owner !== null,
-      })),
+      phase: room.state.phase,
+      maxSeats: room.state.maxSeats,
+      players: room.state.seats.map((seat) => seat.name),
     };
     res.json(info);
   });
