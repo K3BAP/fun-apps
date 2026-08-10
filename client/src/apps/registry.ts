@@ -1,4 +1,4 @@
-import type { ComponentType, LazyExoticComponent } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { AppId, AppManifest } from "./types";
 import kniffel from "./kniffel/manifest";
 import wizard from "./wizard/manifest";
@@ -18,7 +18,9 @@ export const APPS: readonly AppManifest[] = [kniffel, wizard, beet, qwixx];
  * Die tatsaechlichen Ansichten, nachgeladen pro Route. Fehlt eine App hier, ist
  * sie noch nicht portiert und die Route zeigt einen Platzhalter.
  */
-export const APP_VIEWS: Partial<Record<AppId, LazyExoticComponent<ComponentType>>> = {};
+export const APP_VIEWS: Partial<Record<AppId, LazyExoticComponent<ComponentType>>> = {
+  kniffel: lazy(() => import("./kniffel/KniffelApp")),
+};
 
 export function manifestFor(id: AppId): AppManifest {
   const found = APPS.find((app) => app.id === id);
