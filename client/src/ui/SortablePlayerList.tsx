@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Player, PlayerId } from "@/game/players";
 import { CloseIcon, DragHandleIcon } from "./icons";
+import { readableInk } from "./ink";
 
 function Row({
   player,
@@ -54,8 +55,8 @@ function Row({
         <DragHandleIcon />
       </button>
       <span
-        className="grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
-        style={{ backgroundColor: player.color }}
+        className="grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold"
+        style={{ backgroundColor: player.color, color: readableInk(player.color) }}
         aria-hidden="true"
       >
         {position}

@@ -30,6 +30,34 @@
   }
 }
 
+/*
+  Die Toenung des Qwixx-Blocks. Jede Reihe setzt ihre Farbe als `--row`; diese
+  Regeln mischen daraus Flaeche und Rand.
+
+  Das ersetzt die Bastelei mit Hex-Suffixen (`${hex}55`, `${hex}99`), die nur
+  mit sechsstelligen Hexwerten funktionierte und in sRGB mischte. `color-mix`
+  in oklab toent gleichmaessig – und es ist genau die Regel, die die alte
+  `.qx-row`-CSS hatte.
+*/
+@utility row-tint {
+  background-color: color-mix(in oklab, var(--row) 12%, transparent);
+  border-color: color-mix(in oklab, var(--row) 35%, transparent);
+}
+
+@utility row-edge {
+  border-color: color-mix(in oklab, var(--row) 55%, transparent);
+}
+
+/*
+  Ein leeres Feld. Die Flaeche traegt einen Hauch der Feldfarbe – das ist der
+  einzige Hinweis, den die „gemixxt"-Bloecke haben, wo die Farbe eines Feldes
+  von der seiner Reihe abweicht.
+*/
+@utility row-face {
+  background-color: color-mix(in oklab, var(--row) 10%, var(--color-base-100));
+  border-color: color-mix(in oklab, var(--row) 55%, transparent);
+}
+
 @utility safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
