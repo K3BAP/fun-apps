@@ -62,7 +62,6 @@ export const kniffelGame: GameDefinition<KniffelState, KniffelAction> = {
    * Wert ueber mehrere Spieler hinweg – Kniffel ist der einfachste Fall.
    */
   sync: {
-    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
     seatData: (state, index) => {
       const player = state.players[index];
       return player ? sheetOf(state, player.id) : {};

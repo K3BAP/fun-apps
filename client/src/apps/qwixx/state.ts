@@ -162,7 +162,6 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
    * ohne dass eine Regel doppelt geschrieben wird.
    */
   sync: {
-    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
     seatData: (state, index) => {
       const player = state.players[index];
       return player ? sheetOf(state, player.id) : blankSheet();

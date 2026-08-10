@@ -15,8 +15,6 @@ export type Phase = "setup" | "play" | "result";
  * werden auf jedem Geraet neu ausgerechnet.
  */
 export interface SyncSpec<S, A> {
-  /** Die Plaetze, die beim Anlegen des Raums entstehen. */
-  seatsOf(state: S): { name: string; color: string }[];
   /**
    * Die Spielerliste aus dem Raum uebernehmen.
    *

@@ -21,3 +21,13 @@ export function deviceId(): DeviceId {
   const override = new URLSearchParams(location.search).get("device");
   return override ? `${base}#${override}` : base;
 }
+
+/**
+ * Den Entwicklungs-Schalter beim Weiterleiten mitnehmen – sonst verliert der
+ * zweite Tab beim Wechsel der App seinen eigenen Speicher und streitet mit dem
+ * ersten um denselben Platz.
+ */
+export function devParams(): Record<string, string> {
+  const override = new URLSearchParams(location.search).get("device");
+  return override ? { device: override } : {};
+}

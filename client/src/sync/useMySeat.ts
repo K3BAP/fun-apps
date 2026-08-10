@@ -10,9 +10,9 @@ import { seatIndex } from "./useGameSync";
  */
 export function useMySeatIndex(): number | null {
   const { snapshot } = useRoom();
-  if (!snapshot.room) return null;
-  const seat = snapshot.mySeats[0];
-  return seat === undefined ? -1 : seatIndex(seat);
+  const { room, mySeat } = snapshot;
+  if (!room) return null;
+  return mySeat === null ? -1 : seatIndex(room, mySeat);
 }
 
 export type SeatReady = {
@@ -29,17 +29,15 @@ export type SeatReady = {
  */
 export function useSeatReady(): SeatReady | null {
   const { client, snapshot } = useRoom();
-  const room = snapshot.room;
-  const seatId = snapshot.mySeats[0];
-  if (!room || seatId === undefined) return null;
+  const { room, mySeat } = snapshot;
+  if (!room || mySeat === null) return null;
 
-  const seat = room.seats.find((candidate) => candidate.id === seatId);
-  const taken = room.seats.filter((candidate) => candidate.owner !== null);
+  const seat = room.seats.find((candidate) => candidate.id === mySeat);
 
   return {
-    index: seatIndex(seatId),
+    index: seatIndex(room, mySeat),
     ready: seat?.ready ?? false,
-    setReady: (ready) => client.setReady(seatId, ready),
-    waitingFor: taken.filter((candidate) => !candidate.ready).length,
+    setReady: (ready) => client.setReady(mySeat, ready),
+    waitingFor: room.seats.filter((candidate) => !candidate.ready).length,
   };
 }

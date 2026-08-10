@@ -1,16 +1,20 @@
 import { useEffect, useRef } from "react";
-import type { Seat, SeatId } from "@fun/shared";
+import type { RoomState, SeatId } from "@fun/shared";
 import type { GameDefinition } from "@/game/types";
 import type { GameStore } from "@/game/useGameStore";
 import { useRoom } from "./context";
 
-/** Plaetze heissen s1, s2, … – der Spielcode rechnet mit der Position. */
-export function seatIndex(id: SeatId): number {
-  return Number(id.slice(1)) - 1;
-}
-
-export function seatIdAt(index: number): SeatId {
-  return `s${index + 1}`;
+/**
+ * Die Position eines Platzes ist seine Stelle in der Liste – dieselbe
+ * Reihenfolge, in der auch die Spieler stehen.
+ *
+ * Frueher wurde sie aus der Kennung gelesen (`s3` -> 2). Das ging nur, solange
+ * die Plaetze vorab angelegt wurden und keiner je verschwand; seit sie beim
+ * Beitreten entstehen und in der Lobby auch wieder gehen koennen, ist die
+ * Kennung nur noch ein Name.
+ */
+export function seatIndex(room: RoomState, id: SeatId): number {
+  return room.seats.findIndex((seat) => seat.id === id);
 }
 
 /** Wie lange nach der letzten Aenderung gewartet wird, bevor gesendet wird. */
@@ -27,7 +31,7 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
   const { client, snapshot } = useRoom();
   const spec = definition.sync;
 
-  const { room, mySeats, status } = snapshot;
+  const { room, mySeat, epoch, status } = snapshot;
   const { state, dispatch } = store;
 
   // Zuletzt eingearbeiteter Stand je Platz – damit dieselbe Nachricht nicht
@@ -37,13 +41,14 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
   const appliedConfig = useRef<string | null>(null);
   const appliedBarrier = useRef<string | null>(null);
   const lastPublished = useRef<string | null>(null);
+  const appliedEpoch = useRef(0);
 
-  const mySeat: SeatId | undefined = mySeats[0];
+  const myIndex = room && mySeat ? seatIndex(room, mySeat) : -1;
 
   // --- raus ---------------------------------------------------------------
   useEffect(() => {
-    if (!spec || !room || mySeat === undefined) return;
-    const payload = spec.seatData(state, seatIndex(mySeat));
+    if (!spec || !room || !mySeat || myIndex < 0) return;
+    const payload = spec.seatData(state, myIndex);
     const encoded = JSON.stringify(payload ?? null);
     if (encoded === lastPublished.current) return;
 
@@ -52,11 +57,27 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
       client.publish(mySeat, payload);
     }, PUBLISH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [spec, room, mySeat, state, client]);
+  }, [spec, room, mySeat, myIndex, state, client]);
 
   // --- rein ---------------------------------------------------------------
   useEffect(() => {
     if (!spec || !room) return;
+
+    /*
+      Neuer Eintritt in einen Raum: das Gedaechtnis unten beschreibt einen
+      Spielstand, den es lokal nicht mehr gibt (der Einstieg setzt ihn zurueck).
+      Wer den Raum verlaesst und gleich wieder beitritt, bekaeme sonst seine
+      Mitspieler nicht zurueck – die Liste ist ja unveraendert, „schon
+      eingearbeitet“ stimmt aber nicht mehr.
+    */
+    if (appliedEpoch.current !== epoch) {
+      appliedEpoch.current = epoch;
+      appliedRevs.current.clear();
+      appliedRoster.current = null;
+      appliedConfig.current = null;
+      appliedBarrier.current = null;
+      lastPublished.current = null;
+    }
 
     // Zuerst die Mitspieler: ohne sie haetten die Platzinhalte unten niemanden,
     // zu dem sie gehoeren.
@@ -64,22 +85,27 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
     const signature = JSON.stringify(roster);
     if (signature !== appliedRoster.current) {
       appliedRoster.current = signature;
+      // Mit der Liste aendern sich die Positionen – was zu einer alten Position
+      // gemerkt war, gilt nicht mehr.
+      appliedRevs.current.clear();
       dispatch(spec.applyRoster(roster));
     }
 
-    for (const seat of room.seats as Seat[]) {
-      if (seat.id === mySeat || seat.data === null) continue;
-      if (appliedRevs.current.get(seat.id) === seat.rev) continue;
+    room.seats.forEach((seat, index) => {
+      if (seat.id === mySeat || seat.data === null) return;
+      if (appliedRevs.current.get(seat.id) === seat.rev) return;
       appliedRevs.current.set(seat.id, seat.rev);
-      dispatch(spec.applySeat(seatIndex(seat.id), seat.data));
-    }
+      dispatch(spec.applySeat(index, seat.data));
+    });
 
     // Phase und Einstellungen gehoeren dem Host. Wuerde er sie auch selbst
-    // uebernehmen, ueberschriebe der Anfangswert des Raums seinen eigenen Stand.
+    // uebernehmen, ueberschriebe der Stand des Raums seinen eigenen.
     const isHost = room.host === client.device;
 
-    if (spec.applyConfig && !isHost) {
-      const config = JSON.stringify(room.config ?? null);
+    // `null` heisst „der Host hat noch nichts gesagt“ – ein frisch eroeffneter
+    // Raum sieht so aus, und dieses Nichts darf keine Einstellungen ueberbuegeln.
+    if (spec.applyConfig && !isHost && room.config !== null) {
+      const config = JSON.stringify(room.config);
       if (config !== appliedConfig.current) {
         appliedConfig.current = config;
         dispatch(spec.applyConfig(room.config));
@@ -98,7 +124,7 @@ export function useGameSync<S, A>(definition: GameDefinition<S, A>, store: GameS
         dispatch(spec.applyBarrierOpen(room.barrier.token));
       }
     }
-  }, [spec, room, mySeat, dispatch, client.device]);
+  }, [spec, room, mySeat, epoch, dispatch, client.device]);
 
   // --- was nur der Host bekanntgibt: Phase und Schranke --------------------
   useEffect(() => {
