@@ -20,7 +20,9 @@ export default function KniffelApp() {
       definition={kniffelGame}
       manifest={manifest}
       menu={(store) =>
-        store.state.phase === "play" ? [{ label: t.dice, onSelect: () => setDiceOpen(true) }] : []
+        store.state.phase === "play"
+          ? [{ id: "dice", icon: "🎲", label: t.dice, onSelect: () => setDiceOpen(true) }]
+          : []
       }
     >
       <Phases />

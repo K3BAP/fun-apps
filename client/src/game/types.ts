@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { RoomPhase } from "@fun/shared";
 import type { AppId } from "@/apps/types";
 
@@ -91,8 +92,25 @@ export type GameSummary = {
   note?: string;
 };
 
+/**
+ * Ein Eintrag im ⋯-Menue.
+ *
+ * `label` ist nur noch der Name der Handlung. Der Zustand steckte frueher als
+ * Zeichen im Text (`"✓ Bildschirm anlassen"`, `"↩︎ Rückgängig · nicht im
+ * Raum"`), womit Beschriftung, Symbol und Zusatz nicht getrennt gestaltet
+ * werden konnten – und der Text als React-`key` diente, der sich bei jeder
+ * Zustandsaenderung aenderte.
+ */
 export type MenuItem = {
+  /** Eindeutig und stabil – dient als `key`. */
+  id: string;
   label: string;
+  /** Emoji oder Symbol vor der Beschriftung. */
+  icon?: ReactNode;
+  /** Kleiner Zusatz dahinter, z. B. „nicht unterstützt". */
+  note?: string;
+  /** Ein-/ausschaltbarer Eintrag: zeigt einen Haken. */
+  checked?: boolean;
   onSelect: () => void;
   disabled?: boolean;
   danger?: boolean;

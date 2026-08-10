@@ -1,7 +1,7 @@
 import { rankBy } from "@/game/rank";
 import { Container } from "@/ui/Container";
 import { Ranking, type RankingEntry } from "@/ui/Ranking";
-import { ResultHeader } from "@/ui/ResultHeader";
+import { AppHero } from "@/ui/AppHero";
 import { ShareButton } from "@/ui/ShareButton";
 import { BONUS_POINTS, bonus, grandTotal, lowerSum, upperTotal } from "../rules";
 import { kniffelGame, sheetOf, useKniffel } from "../state";
@@ -31,7 +31,7 @@ export function Result() {
 
   return (
     <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
-      <ResultHeader
+      <AppHero
         title={t.finalTitle}
         subtitle={winner ? t.winner(winner.item.name, winner.score) : ""}
       />

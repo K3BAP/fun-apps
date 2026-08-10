@@ -46,11 +46,11 @@ export const t = {
   evaluateLocked:
     "Auswerten ist gesperrt, bis das Spielende erreicht ist: zwei geschlossene Reihen oder 4 Fehlwürfe.",
 
-  menuOverviewSolo: "📋 Reihen-Übersicht",
-  menuOverviewShared: "📋 Übersicht aller Spieler",
-  menuDice: "🎲 Würfeln",
-  menuEvaluate: "🏁 Spiel auswerten",
-  menuEvaluateLocked: "🔒 Auswerten – erst am Spielende",
+  menuOverviewSolo: "Reihen-Übersicht",
+  menuOverviewShared: "Übersicht aller Spieler",
+  menuDice: "Würfeln",
+  menuEvaluate: "Spiel auswerten",
+  menuEvaluateLockedNote: "erst am Spielende",
 
   overviewTitle: "Übersicht",
   overviewPenalties: "Fehl.",

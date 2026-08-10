@@ -1,3 +1,5 @@
+import { PlayerRow } from "@/ui/PlayerRow";
+import { StepTabs } from "@/ui/StepTabs";
 import { Container } from "@/ui/Container";
 import { GameHeader } from "@/ui/GameHeader";
 import { GameLayout } from "@/ui/GameLayout";
@@ -15,23 +17,10 @@ import {
 import { useWizard, type WizardStep } from "../state";
 import { t } from "../strings";
 
-function StepTabs({ step }: { step: WizardStep }) {
-  const tab = (own: WizardStep, label: string) => (
-    <span
-      className={`rounded-full px-3 py-1 text-xs ${
-        step === own ? "bg-primary text-primary-content font-semibold" : "bg-base-200"
-      }`}
-    >
-      {label}
-    </span>
-  );
-  return (
-    <div className="flex gap-2">
-      {tab("bid", t.stepBid)}
-      {tab("trick", t.stepTrick)}
-    </div>
-  );
-}
+const STEPS = [
+  { key: "bid", label: t.stepBid },
+  { key: "trick", label: t.stepTrick },
+] as const satisfies readonly { key: WizardStep; label: string }[];
 
 export function Play() {
   const { store } = useWizard();
@@ -99,7 +88,7 @@ export function Play() {
 
       <Container className="flex flex-col gap-3 px-3 pb-4 sm:px-4">
         <div className="flex flex-col gap-1">
-          <StepTabs step={step} />
+          <StepTabs steps={STEPS} current={step} />
           <h2 className="text-xl font-bold">{step === "bid" ? t.bidTitle : t.trickTitle}</h2>
           <p className="text-base-content/60 text-sm">
             {step === "bid" ? t.bidSubtitle : t.trickSubtitle}
@@ -112,11 +101,7 @@ export function Play() {
             const tricks = draftTricks[player.id] ?? 0;
             const points = roundScore(bid, tricks);
             return (
-              <li
-                key={player.id}
-                style={{ borderInlineStartColor: player.color }}
-                className="bg-base-200 flex items-center gap-3 rounded-lg border-s-4 px-3 py-2"
-              >
+              <PlayerRow as="li" key={player.id} accent={player.color}>
                 <span className="flex min-w-0 flex-1 flex-col leading-tight">
                   <span className="truncate font-medium">{player.name}</span>
                   {step === "bid" ? (
@@ -146,7 +131,7 @@ export function Play() {
                     )
                   }
                 />
-              </li>
+              </PlayerRow>
             );
           })}
         </ul>

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { NAME_MAX_LENGTH } from "@/game/players";
+import { SetupCard } from "@/ui/SetupCard";
 import { Container } from "@/ui/Container";
-import { GameHero } from "@/ui/GameHero";
+import { AppHero } from "@/ui/AppHero";
 import { PlayerSetup } from "@/ui/PlayerSetup";
 import { Toggle } from "@/ui/Toggle";
 import manifest from "../manifest";
@@ -38,27 +39,25 @@ function SoloSetup() {
 
   return (
     <>
-      <section className="card card-border bg-base-200 border-base-300">
-        <div className="card-body gap-3 p-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t.yourName}</span>
-            <input
-              type="text"
-              className="input w-full"
-              placeholder={t.yourNamePlaceholder}
-              maxLength={NAME_MAX_LENGTH}
-              autoComplete="off"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") store.dispatch({ type: "startSolo", name });
-              }}
-            />
-          </label>
-          <p className="text-base-content/60 text-sm">{t.soloHint}</p>
-          <Options />
-        </div>
-      </section>
+      <SetupCard>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium">{t.yourName}</span>
+          <input
+            type="text"
+            className="input w-full"
+            placeholder={t.yourNamePlaceholder}
+            maxLength={NAME_MAX_LENGTH}
+            autoComplete="off"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") store.dispatch({ type: "startSolo", name });
+            }}
+          />
+        </label>
+        <p className="text-base-content/60 text-sm">{t.soloHint}</p>
+        <Options />
+      </SetupCard>
 
       <button
         type="button"
@@ -78,19 +77,17 @@ function SharedSetup() {
 
   return (
     <>
-      <section className="card card-border bg-base-200 border-base-300">
-        <div className="card-body gap-3 p-4">
-          <PlayerSetup
-            players={players}
-            min={min}
-            max={max}
-            onAdd={(name) => store.dispatch({ type: "addPlayer", name })}
-            onRemove={(id) => store.dispatch({ type: "removePlayer", id })}
-            onReorder={(ids) => store.dispatch({ type: "reorderPlayers", ids })}
-          />
-          <Options />
-        </div>
-      </section>
+      <SetupCard>
+        <PlayerSetup
+          players={players}
+          min={min}
+          max={max}
+          onAdd={(name) => store.dispatch({ type: "addPlayer", name })}
+          onRemove={(id) => store.dispatch({ type: "removePlayer", id })}
+          onReorder={(ids) => store.dispatch({ type: "reorderPlayers", ids })}
+        />
+        <Options />
+      </SetupCard>
 
       <button
         type="button"
@@ -111,7 +108,7 @@ export function Setup() {
 
   return (
     <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
-      <GameHero tagline={t.tagline} />
+      <AppHero subtitle={t.tagline} back />
 
       <div className="flex flex-col gap-1">
         <span className="text-base-content/60 text-xs">{t.modeLabel}</span>

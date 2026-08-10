@@ -11,6 +11,7 @@ import { RoomSheet } from "@/sync/RoomSheet";
 import { useGameSync } from "@/sync/useGameSync";
 import { ThemeScope } from "@/theme/ThemeProvider";
 import { MenuSheet } from "@/ui/MenuSheet";
+import { UndoIcon } from "@/ui/icons";
 import { GameContext } from "./context";
 import type { GameDefinition, MenuItem } from "./types";
 import { useGameStore, type GameStore } from "./useGameStore";
@@ -105,9 +106,10 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
 
   if (definition.sync) {
     standardItems.push({
-      label: snapshot.room
-        ? `👥 Raum ${snapshot.room.code}${snapshot.status === "offline" ? " · offline" : ""}`
-        : "👥 Auf mehreren Geräten",
+      id: "room",
+      icon: "👥",
+      label: snapshot.room ? `Raum ${snapshot.room.code}` : "Auf mehreren Geräten",
+      note: snapshot.room && snapshot.status === "offline" ? "offline" : undefined,
       onSelect: () => setRoomOpen(true),
     });
   }
@@ -117,36 +119,49 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
     // Plaetze, und die gehoeren einem nicht.
     const inRoom = snapshot.room !== null;
     standardItems.push({
-      label: `↩︎ ${definition.undoLabel ?? "Rückgängig"}${inRoom ? " · nicht im Raum" : ""}`,
+      id: "undo",
+      icon: <UndoIcon />,
+      label: definition.undoLabel ?? "Rückgängig",
+      note: inRoom ? "nicht im Raum" : undefined,
       disabled: inRoom || !store.canUndo,
       onSelect: store.undo,
     });
     if (!inRoom && store.canRedo) {
-      standardItems.push({ label: "↪︎ Wiederholen", onSelect: store.redo });
+      standardItems.push({
+        id: "redo",
+        icon: <UndoIcon className="size-5 scale-x-[-1]" />,
+        label: "Wiederholen",
+        onSelect: store.redo,
+      });
     }
   }
 
   standardItems.push({
-    label: `${wakeSupported && keepAwake ? "✓" : "○"} Bildschirm anlassen${
-      wakeSupported ? "" : " · nicht unterstützt"
-    }`,
+    id: "wakelock",
+    label: "Bildschirm anlassen",
+    checked: wakeSupported && keepAwake,
+    note: wakeSupported ? undefined : "nicht unterstützt",
     disabled: !wakeSupported,
     onSelect: () => setKeepAwake((on) => !on),
   });
 
   standardItems.push({
-    label: `${haptics.enabled ? "✓" : "○"} Vibrieren beim Tippen`,
+    id: "haptics",
+    label: "Vibrieren beim Tippen",
+    checked: haptics.enabled,
     onSelect: () => haptics.setEnabled(!haptics.enabled),
   });
 
   if (phase !== "setup") {
     standardItems.push({
+      id: "toSetup",
       label: "Zurück zur Spielerauswahl",
       onSelect: () => store.dispatch(definition.toSetupAction),
     });
   }
 
   standardItems.push({
+    id: "reset",
     label: "Spiel zurücksetzen",
     danger: true,
     onSelect: store.reset,
