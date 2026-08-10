@@ -176,10 +176,17 @@ Zugriffskontrolle und gibt auch nicht vor, eine zu sein.
 - **Kniffel** – ein Platz ist eine Spalte. Der einfachste Fall: kein Wert hängt
   von den anderen ab.
 - **Qwixx** – ein Platz ist ein Block. Schließt jemand eine Reihe, ist sie bei
-  allen gesperrt. Das brauchte **keine Zeile Protokoll**: `closedRows` ist eine
-  reine Funktion aller Blöcke, und ob die auf einem Gerät liegen oder von
-  mehreren kommen, ist ihr egal. Das Schloss-Feld von Hand bleibt trotzdem – für
-  Mitspieler mit Papierblock.
+  allen gesperrt, und ihr Farbwürfel verschwindet aus dem Würfel-Widget. Das
+  brauchte **keine Zeile Protokoll**: `closedRows` ist eine reine Funktion aller
+  Blöcke, und ob die auf einem Gerät liegen oder von mehreren kommen, ist ihr
+  egal. Das Schloss-Feld von Hand bleibt trotzdem – für Mitspieler mit
+  Papierblock.
+
+  Gesperrt heißt dabei nicht ganz vorbei: das Schließfeld selbst bleibt offen,
+  weil Mitspieler eine Reihe im selben Zug noch mit zumachen dürfen. Der Block
+  kennt keine Züge und kann den Zeitpunkt nicht prüfen – von den beiden
+  möglichen Fehlern ist das der kleinere.
+
 - **Ab ins Beet** – ein Platz ist ein Gärtner, und hier zeigt sich die
   **Bereit-Schranke**: alle tragen ihre Beete gleichzeitig ein und tippen auf
   _Fertig_. Erst wenn jeder fertig ist, geht der Tisch gemeinsam weiter – der

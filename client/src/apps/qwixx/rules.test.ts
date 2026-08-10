@@ -138,9 +138,22 @@ describe("Feldzustaende", () => {
     expect(cellState(five, "red", LAST, false)).toBe("available");
   });
 
-  it("macht in einer gesperrten Reihe nichts mehr anwaehlbar", () => {
+  it("macht in einer gesperrten Reihe die Zahlenfelder unanwaehlbar", () => {
     const sheet = sheetWith({ red: [1] });
     expect(cellState(sheet, "red", 5, true)).toBe("off");
+  });
+
+  it("laesst eine gesperrte Reihe trotzdem noch zumachen", () => {
+    // Schliesst jemand eine Reihe, duerfen Mitspieler sie im selben Zug noch
+    // mit zumachen. Das Schliessfeld bleibt darum auch dann offen, wenn die
+    // Reihe fuer diesen Block schon gesperrt ist.
+    const five = sheetWith({ red: [0, 1, 2, 3, 4] });
+    expect(cellState(five, "red", LAST, true)).toBe("available");
+  });
+
+  it("haelt sich dabei an die uebrigen Bedingungen", () => {
+    const four = sheetWith({ red: [0, 1, 2, 3] });
+    expect(cellState(four, "red", LAST, true)).toBe("lockedOut");
   });
 
   it("laesst nur das rechteste Kreuz wieder loesen", () => {

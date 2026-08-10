@@ -208,6 +208,9 @@ export function closedRows(sheets: readonly SeatSheet[], extClosed: Locks): Lock
 /**
  * Fuer diesen Block gesperrt: die Reihe ist zu, aber nicht von ihm selbst –
  * wer selbst geschlossen hat, sieht seine Kreuze weiter.
+ *
+ * „Gesperrt“ heisst nicht „vorbei“: das Schliessfeld bleibt offen, siehe
+ * `cellState`.
  */
 export function isBlocked(self: SeatSheet, key: RowKey, closed: Locks): boolean {
   return closed[key] && !self.locked[key];
@@ -254,7 +257,19 @@ export function cellState(
   const rightmost = maxMarked(row);
   if (index < rightmost) return "skipped";
   if (index === LAST && countMarks(row) < CLOSE_MIN) return "lockedOut";
-  if (!blocked && index > rightmost) return "available";
+
+  /*
+    Eine von jemand anderem geschlossene Reihe laesst genau eine Sache noch zu:
+    sie selbst zuzumachen.
+
+    Das ist die Regel „im selben Zug“ – schliesst jemand eine Reihe, dürfen
+    Mitspieler, die bei diesem Wurf ebenfalls dürfen, sie noch mit zumachen; erst
+    danach ist sie vom Tisch. Der Block kennt keine Zuege und kann den Zeitpunkt
+    darum nicht pruefen. Von den beiden moeglichen Fehlern ist dieser der
+    kleinere: lieber ein Feld zu lange offen als eines, das die Regeln erlauben
+    und das Programm verbietet.
+  */
+  if (index > rightmost && (!blocked || index === LAST)) return "available";
   return "off";
 }
 

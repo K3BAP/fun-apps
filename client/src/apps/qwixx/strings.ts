@@ -33,7 +33,12 @@ export const t = {
   lockedByOther: (label: string) => `${label}: von einem Mitspieler geschlossen`,
 
   blockedRows: (labels: readonly string[]) =>
-    `Gesperrt: ${labels.join(" · ")} – hier geht nichts mehr rein.`,
+    `Zugemacht: ${labels.join(" · ")} – im selben Zug darfst du die Reihe noch mit zumachen, sonst geht hier nichts mehr rein.`,
+
+  diceGone: (labels: readonly string[]) =>
+    labels.length === 1
+      ? `${labels[0]} ist raus – die Reihe ist zu.`
+      : `${labels.join(" und ")} sind raus – die Reihen sind zu.`,
   lockHint:
     "Hat ein Mitspieler eine Reihe zugemacht? Schloss antippen – dann ist sie hier gesperrt.",
 
