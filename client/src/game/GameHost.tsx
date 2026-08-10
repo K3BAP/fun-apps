@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { normalizeCode } from "@fun/shared";
 import type { AppManifest } from "@/apps/types";
 import { useHaptics } from "@/hooks/useHaptics";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { appendGame } from "@/storage/history";
 import { nsKey, readJson, writeJson } from "@/storage/keys";
-import { RoomProvider } from "@/sync/RoomProvider";
 import { useRoom } from "@/sync/context";
+import { OnlineGate } from "@/sync/OnlineGate";
+import type { RoomClient } from "@/sync/roomClient";
+import { RoomScope } from "@/sync/RoomScope";
 import { RoomSheet } from "@/sync/RoomSheet";
 import { useGameSync } from "@/sync/useGameSync";
 import { ThemeScope } from "@/theme/ThemeProvider";
@@ -35,14 +38,29 @@ type Props<S, A> = {
 };
 
 /**
+ * Soll der Online-Einstieg aufgehen, und mit welchem Code?
+ *
+ * `null` = nein, `""` = ja, ohne Einladung, sonst der eingeladene Raumcode.
+ * „Online spielen“ bei laufender Sitzung heisst dabei: zurueck in den Raum, in
+ * dem man schon sitzt – und nicht einen zweiten aufmachen.
+ */
+function initialGate(gameId: string, client: RoomClient): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const invite = params.get("raum");
+  if (invite !== null) return normalizeCode(invite);
+  if (params.get("online") !== null && !client.hasSession(gameId)) return "";
+  return null;
+}
+
+/**
  * Der Rahmen um ein Spiel: Zustand, Theme, Wachhalten des Bildschirms, das
  * ⋯-Menue und – falls das Spiel es anbietet – der Mehrgeraete-Modus.
  */
 export function GameHost<S, A>(props: Props<S, A>) {
   return (
-    <RoomProvider>
+    <RoomScope gameId={props.definition.id}>
       <GameHostInner {...props} />
-    </RoomProvider>
+    </RoomScope>
   );
 }
 
@@ -60,21 +78,27 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
   const { client, snapshot } = useRoom();
   useGameSync(definition, store);
 
-  // Beim Öffnen der App: einem Raum aus dem QR-Link folgen (?raum=ABCD) oder
-  // die zuletzt benutzte Sitzung wieder aufnehmen.
+  // Was die Adresse beim Öffnen wollte, steht schon beim ersten Rendern fest –
+  // dafuer braucht es keinen Effekt, der den Bildschirm nachtraeglich umwirft.
+  const [gate, setGate] = useState<string | null>(() =>
+    definition.sync ? initialGate(definition.id, client) : null,
+  );
+
+  // Die Marker aus der Adresse nehmen, damit ein Reload nicht von vorn anfaengt,
+  // und – wenn keine Einladung vorliegt – die letzte Sitzung wieder aufnehmen.
   useEffect(() => {
     if (!definition.sync) return;
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("raum");
-    if (code) {
-      client.join(code);
-      // Den Code aus der Adresse nehmen, damit ein Reload nicht erneut beitritt.
+    const invite = params.get("raum");
+
+    if (invite !== null || params.get("online") !== null) {
       params.delete("raum");
+      params.delete("online");
       const query = params.toString();
       window.history.replaceState(null, "", window.location.pathname + (query ? `?${query}` : ""));
-      return;
     }
-    client.resume(definition.id);
+
+    if (invite === null) client.resume(definition.id);
   }, [client, definition.sync, definition.id]);
 
   // Beim Phasenwechsel nach oben – sonst startet man das Ergebnis mitten drin.
@@ -104,12 +128,14 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
 
   const standardItems: MenuItem[] = [];
 
-  if (definition.sync) {
+  // Nur im Raum – eroeffnet wird nicht mehr aus dem Menue heraus, sondern vorne
+  // im Online-Einstieg.
+  if (definition.sync && snapshot.room) {
     standardItems.push({
       id: "room",
       icon: "👥",
-      label: snapshot.room ? `Raum ${snapshot.room.code}` : "Auf mehreren Geräten",
-      note: snapshot.room && snapshot.status === "offline" ? "offline" : undefined,
+      label: `Raum ${snapshot.room.code}`,
+      note: snapshot.status === "offline" ? "offline" : undefined,
       onSelect: () => setRoomOpen(true),
     });
   }
@@ -170,23 +196,35 @@ function GameHostInner<S, A>({ definition, manifest, menu, children }: Props<S, 
   return (
     <GameContext value={contextValue}>
       <ThemeScope accent={manifest.accent}>
-        {children}
+        {/* Solange kein Raum steht, gehoert der Bildschirm dem Einstieg. Faellt
+            der Raum spaeter weg (Lobby verlassen), ist man wieder hier. */}
+        {gate !== null && !snapshot.room && definition.sync ? (
+          <OnlineGate
+            manifest={manifest}
+            gameVersion={definition.version}
+            invite={gate === "" ? null : gate}
+            // Ein Raum faengt bei null an: der Block auf diesem Geraet gehoert
+            // zur alten Partie, die Mitspieler kommen gleich aus dem Raum.
+            onEnter={store.reset}
+            onCancel={() => setGate(null)}
+          />
+        ) : (
+          children
+        )}
         <MenuSheet
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
           items={[...(menu?.(store) ?? []), ...standardItems]}
         />
-        {definition.sync && (
-          <RoomSheet
-            open={roomOpen}
-            onClose={() => setRoomOpen(false)}
-            gameId={definition.id}
-            gameVersion={definition.version}
-            phase={phase}
-            spec={definition.sync}
-            state={store.state}
-          />
-        )}
+        <RoomSheet
+          open={roomOpen}
+          onClose={() => {
+            setRoomOpen(false);
+            // Wer den Raum von hier aus verlaesst, will zurueck ins lokale
+            // Spiel – nicht in die Raumauswahl.
+            setGate(null);
+          }}
+        />
       </ThemeScope>
     </GameContext>
   );

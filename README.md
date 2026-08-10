@@ -126,17 +126,26 @@ wertet die nicht aus – dort führt das Icon auf die Übersicht.
 
 ## Auf mehreren Geräten (Räume)
 
-Optional kann jeder auf seinem eigenen Gerät spielen. Ein Gerät eröffnet im
-⋯-Menü einen **Raum** und bekommt einen vierstelligen Code plus QR-Code; die
-anderen scannen ihn (`/beitreten/<Code>`) oder tippen den Code ein und
-**übernehmen einen Platz**.
+Optional kann jeder auf seinem eigenen Gerät spielen. Der Weg dorthin steht auf
+der Startseite: jede Kachel hat neben dem Spiel einen zweiten Knopf
+**Online-Multiplayer**. Dort sagt man seinen Namen und eröffnet einen **Raum**
+oder tritt einem bei – mit dem vierstelligen Code oder über den QR-Code
+(`/beitreten/<Code>`).
 
-Das Modell in einem Satz: **ein Platz, ein Schreiber.** Jeder Platz gehört genau
-einem Gerät. Nur dieses Gerät schreibt seine Spalte bzw. seinen Block; alle
-anderen sehen sie live, aber nur lesend – fremde Felder sind gar nicht erst
-antippbar. Konflikte sind damit nicht gelöst, sondern ausgeschlossen. Deshalb
-wird der Inhalt eines Platzes immer **vollständig** übertragen statt als Diff:
-ein Qwixx-Block sind rund 700 Byte, eine Kniffel-Spalte 13 Zahlen.
+Danach steht die **Lobby**: der Code, der QR-Code und die Liste derer, die schon
+da sind. Sie füllt sich von selbst, denn **wer beitritt, bringt seinen Platz
+mit** – Plätze werden nicht vorher angelegt und dann verteilt. Der Host startet,
+wenn alle drin sind; sobald gespielt wird, kommt niemand Neues mehr hinein, weil
+das die Reihenfolge verschöbe, an der alle Blöcke hängen. Ein bekanntes Gerät
+darf jederzeit zurück – nach Reload oder Funkloch bekommt es seinen Platz
+wieder, ohne dass jemand etwas „übernehmen“ müsste.
+
+Das Modell in einem Satz: **ein Gerät, ein Platz.** Nur dieses Gerät schreibt
+seine Spalte bzw. seinen Block; alle anderen sehen sie live, aber nur lesend –
+fremde Felder sind gar nicht erst antippbar. Konflikte sind damit nicht gelöst,
+sondern ausgeschlossen. Deshalb wird der Inhalt eines Platzes immer
+**vollständig** übertragen statt als Diff: ein Qwixx-Block sind rund 700 Byte,
+eine Kniffel-Spalte 13 Zahlen.
 
 Der Server kennt **keine Spielregeln**. Werte, die sich aus allen Plätzen
 zusammen ergeben, rechnet jedes Gerät selbst aus – das sind reine Funktionen,
@@ -158,8 +167,8 @@ Und mit Raum gilt: die Verbindung ist eine Annehmlichkeit, keine Voraussetzung.
   eine bewusste Eigenschaft, keine Lücke.
 
 Die Berechtigung ist bewusst schlicht: wer den Code kennt, ist im Raum; einen
-Platz beschreibt nur sein Eigentümer; Phase und Einstellungen ändert nur der
-Host. Für eine Partie am Küchentisch ist das angemessen – es ist keine
+Platz beschreibt nur sein Eigentümer; Phase, Einstellungen und der Startzeitpunkt
+gehören dem Host. Für eine Partie am Küchentisch ist das angemessen – es ist keine
 Zugriffskontrolle und gibt auch nicht vor, eine zu sein.
 
 ### Was ein Raum je Spiel bedeutet
@@ -200,9 +209,13 @@ gibt es `?device=b`: der Parameter hängt ein Suffix an die Kennung **und**
 trennt den localStorage-Namensraum. Ohne ihn ändert sich nichts.
 
 ```
-Tab 1: http://localhost:5173/kniffel?device=a     # Raum eröffnen, Platz nehmen
-Tab 2: http://localhost:5173/beitreten/<Code>?device=b
+Tab 1: http://localhost:5173/kniffel?online=1&device=a   # Raum eröffnen
+Tab 2: http://localhost:5173/beitreten/<Code>?device=b   # Namen sagen, beitreten
 ```
+
+Der Parameter wird beim Weiterleiten mitgenommen, aber nur beim **Laden** der
+Seite ausgewertet – ein Tab, der sich seine Kennung merken soll, muss ihn also in
+der Adresse haben, mit der er geöffnet wurde.
 
 ## Themes und Hell/Dunkel
 
