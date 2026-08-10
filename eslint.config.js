@@ -5,8 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
 export default tseslint.config(
-  // site/ ist der alte Vanilla-Stand und wird in Phase 5 geloescht.
-  { ignores: ["**/dist/**", "**/node_modules/**", "site/**"] },
+  { ignores: ["**/dist/**", "**/node_modules/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
