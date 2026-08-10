@@ -22,6 +22,7 @@ export const APP_VIEWS: Partial<Record<AppId, LazyExoticComponent<ComponentType>
   kniffel: lazy(() => import("./kniffel/KniffelApp")),
   wizard: lazy(() => import("./wizard/WizardApp")),
   beet: lazy(() => import("./beet/BeetApp")),
+  qwixx: lazy(() => import("./qwixx/QwixxApp")),
 };
 
 export function manifestFor(id: AppId): AppManifest {
