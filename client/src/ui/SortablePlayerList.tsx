@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Player, PlayerId } from "@/game/players";
+import { CloseIcon, DragHandleIcon } from "./icons";
 
 function Row({
   player,
@@ -45,12 +46,12 @@ function Row({
     >
       <button
         type="button"
-        className="btn btn-ghost btn-sm px-2 text-lg leading-none"
+        className="btn btn-ghost btn-sm px-2"
         aria-label={`${player.name} verschieben`}
         {...attributes}
         {...listeners}
       >
-        ≡
+        <DragHandleIcon />
       </button>
       <span
         className="grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
@@ -66,7 +67,7 @@ function Row({
         onClick={onRemove}
         aria-label={`${player.name} entfernen`}
       >
-        ✕
+        <CloseIcon className="size-4" />
       </button>
     </li>
   );
@@ -74,7 +75,7 @@ function Row({
 
 /**
  * Die einzige sortierbare Liste im Projekt – deshalb direkt gegen dnd-kit
- * gebaut und nicht noch einmal weggekapselt. Gezogen wird am Griff ≡, per
+ * gebaut und nicht noch einmal weggekapselt. Gezogen wird am Griff, per
  * Tastatur geht es ebenfalls (Leertaste, dann Pfeiltasten).
  */
 export function SortablePlayerList({

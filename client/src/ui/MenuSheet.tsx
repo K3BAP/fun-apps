@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { MenuItem } from "@/game/types";
 import { ColorModeToggle } from "./ColorModeToggle";
 import { Sheet } from "./Sheet";
+import { ArrowLeftIcon } from "./icons";
 
 export function MenuSheet({
   open,
@@ -41,10 +42,11 @@ export function MenuSheet({
 
         <Link
           to="/"
-          className="btn btn-ghost h-auto min-h-0 justify-start px-3 py-3 text-base font-normal"
+          className="btn btn-ghost h-auto min-h-0 justify-start gap-3 px-3 py-3 text-base font-normal"
           onClick={onClose}
         >
-          ← Alle Apps
+          <ArrowLeftIcon />
+          Alle Apps
         </Link>
       </div>
     </Sheet>

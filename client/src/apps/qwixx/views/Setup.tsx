@@ -8,6 +8,7 @@ import manifest from "../manifest";
 import { VARIANTS, variantInfo } from "../rules";
 import { useQwixx } from "../state";
 import { t } from "../strings";
+import { SegmentedControl } from "@/ui/SegmentedControl";
 
 function Options() {
   const { store } = useQwixx();
@@ -114,47 +115,29 @@ export function Setup() {
 
       <div className="flex flex-col gap-1">
         <span className="text-base-content/60 text-xs">{t.modeLabel}</span>
-        <div className="join">
-          {(
-            [
-              { key: "shared", label: t.modeShared, hint: t.modeSharedHint },
-              { key: "solo", label: t.modeSolo, hint: t.modeSoloHint },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => store.dispatch({ type: "setMode", mode: option.key })}
-              aria-pressed={mode === option.key}
-              className={`btn join-item h-auto flex-1 flex-col gap-0 py-2 ${
-                mode === option.key ? "btn-primary" : "btn-outline"
-              }`}
-            >
-              <span className="text-sm font-semibold">{option.label}</span>
-              <span className="text-xs font-normal opacity-70">{option.hint}</span>
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t.modeLabel}
+          value={mode}
+          onChange={(next) => store.dispatch({ type: "setMode", mode: next })}
+          options={[
+            { key: "shared", label: t.modeShared, hint: t.modeSharedHint },
+            { key: "solo", label: t.modeSolo, hint: t.modeSoloHint },
+          ]}
+        />
       </div>
 
       <div className="flex flex-col gap-1">
         <span className="text-base-content/60 text-xs">{t.blockLabel}</span>
-        <div className="join">
-          {VARIANTS.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => store.dispatch({ type: "setVariant", variant: option.key })}
-              aria-pressed={variant === option.key}
-              className={`btn join-item h-auto flex-1 flex-col gap-0 py-2 ${
-                variant === option.key ? "btn-primary" : "btn-outline"
-              }`}
-            >
-              <span className="text-sm font-semibold">{option.title}</span>
-              <span className="text-xs font-normal opacity-70">{option.sub}</span>
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t.blockLabel}
+          value={variant}
+          onChange={(next) => store.dispatch({ type: "setVariant", variant: next })}
+          options={VARIANTS.map((option) => ({
+            key: option.key,
+            label: option.title,
+            hint: option.sub,
+          }))}
+        />
         <p className="text-base-content/60 text-sm">
           {variantInfo(variant).hint}
           {solo && t.soloAllSame}

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { APPS } from "@/apps/registry";
 import { ShellScope } from "@/theme/ThemeProvider";
 import { ColorModeToggle } from "@/ui/ColorModeToggle";
+import { ArrowRightIcon } from "@/ui/icons";
 
 export default function Home() {
   return (
@@ -37,9 +38,7 @@ export default function Home() {
                   </span>
                   <span className="text-base-content/70 text-sm">{app.description}</span>
                 </span>
-                <span className="text-base-content/40 ml-auto text-xl" aria-hidden="true">
-                  →
-                </span>
+                <ArrowRightIcon className="text-base-content/40 ml-auto size-5 shrink-0" />
               </div>
             </Link>
           ))}

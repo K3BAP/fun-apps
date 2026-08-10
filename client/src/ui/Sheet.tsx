@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { CloseIcon } from "./icons";
 
 /**
  * Bottom-Sheet auf Basis von <dialog>.
@@ -61,7 +62,7 @@ export function Sheet({
             onClick={onClose}
             aria-label="Schließen"
           >
-            ✕
+            <CloseIcon className="size-4" />
           </button>
         </div>
 

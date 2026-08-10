@@ -1,6 +1,7 @@
 import { useGame } from "@/game/context";
 import type { ReactNode } from "react";
 import { Container } from "./Container";
+import { MoreIcon } from "./icons";
 
 /**
  * Die klebende Kopfzeile der Spiel-Ansicht: Marke links, Kurzstand rechts,
@@ -36,11 +37,11 @@ export function GameHeader({
 
         <button
           type="button"
-          className="btn btn-ghost btn-sm btn-circle text-lg"
+          className="btn btn-ghost btn-sm btn-circle"
           onClick={openMenu}
           aria-label="Menü"
         >
-          ⋯
+          <MoreIcon />
         </button>
       </Container>
     </header>
