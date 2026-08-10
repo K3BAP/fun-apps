@@ -22,6 +22,7 @@ export function createWsTransport(): Transport {
   let socket: WebSocket | null = null;
   let code: RoomCode | null = null;
   let device: DeviceId | null = null;
+  let name = "";
   let retryDelay = RETRY_MIN_MS;
   let retryTimer: number | undefined;
   let pingTimer: number | undefined;
@@ -31,19 +32,32 @@ export function createWsTransport(): Transport {
 
   function open(): void {
     if (code === null || device === null) return;
-    const hello: ClientMsg = { t: "hello", v: PROTOCOL_VERSION, device, code };
-    socket = new WebSocket(socketUrl());
+    const hello: ClientMsg = { t: "hello", v: PROTOCOL_VERSION, device, code, name };
+    /*
+      Die eigene Verbindung festhalten und in jedem Ereignis vergleichen.
 
-    socket.addEventListener("open", () => {
+      Ohne diesen Vergleich meldet eine bereits abgeloeste Verbindung ihren
+      Abbruch noch nach – und zwar *nachdem* die neue schon offen ist. Der
+      Status faellt dann von „verbunden“ auf „offline“ zurueck, und der
+      Wiederhol-Zeitgeber legt eine dritte Verbindung obendrauf. Das Ergebnis
+      ist ein Raum, der dauerhaft offline aussieht, obwohl eine Leitung steht.
+    */
+    const ws = new WebSocket(socketUrl());
+    socket = ws;
+
+    ws.addEventListener("open", () => {
+      if (socket !== ws) return;
       retryDelay = RETRY_MIN_MS;
-      socket?.send(JSON.stringify(hello));
+      ws.send(JSON.stringify(hello));
       emit({ type: "open" });
       pingTimer = window.setInterval(() => {
-        socket?.send(JSON.stringify({ t: "ping" } satisfies ClientMsg));
+        if (ws.readyState === WebSocket.OPEN)
+          ws.send(JSON.stringify({ t: "ping" } satisfies ClientMsg));
       }, PING_MS);
     });
 
-    socket.addEventListener("message", (event) => {
+    ws.addEventListener("message", (event) => {
+      if (socket !== ws) return;
       try {
         emit({ type: "message", msg: JSON.parse(String(event.data)) as ServerMsg });
       } catch {
@@ -51,7 +65,8 @@ export function createWsTransport(): Transport {
       }
     });
 
-    socket.addEventListener("close", () => {
+    ws.addEventListener("close", () => {
+      if (socket !== ws) return;
       window.clearInterval(pingTimer);
       socket = null;
       emit({ type: "closed", willRetry: !closedByUs });
@@ -65,11 +80,15 @@ export function createWsTransport(): Transport {
   }
 
   return {
-    connect(nextCode, nextDevice) {
+    connect(nextCode, nextDevice, nextName) {
       closedByUs = false;
       code = nextCode;
       device = nextDevice;
+      name = nextName;
       window.clearTimeout(retryTimer);
+      // Der Herzschlag der alten Verbindung endet hier – ihr close-Ereignis
+      // wird gleich als veraltet verworfen und raeumt nicht mehr auf.
+      window.clearInterval(pingTimer);
       socket?.close();
       open();
     },

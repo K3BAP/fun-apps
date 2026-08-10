@@ -41,6 +41,11 @@ export type QwixxState = {
   /** „Auswerten“ erst zulassen, wenn eine echte Endbedingung erfuellt ist. */
   requireEnd: boolean;
   players: Player[];
+  /**
+   * Welcher Block gerade angesehen wird – aber nur, wenn ihn jemand *gewaehlt*
+   * hat. `null` heisst „keine Wahl getroffen“ und ueberlaesst die Antwort dem
+   * Ort, an dem sie sich stellt: im Raum ist das der eigene Platz.
+   */
   activeId: PlayerId | null;
   /** Von Hand gesetzte Schloesser – fuer Mitspieler ausserhalb dieses Geraets. */
   extClosed: Locks;
@@ -89,8 +94,16 @@ export function closedFor(state: QwixxState): Locks {
   return closedRows(sheetsInOrder(state), state.extClosed);
 }
 
-export function activePlayer(state: QwixxState): Player | null {
-  return state.players.find((p) => p.id === state.activeId) ?? state.players[0] ?? null;
+/**
+ * Der Block, der gerade auf dem Tisch liegt.
+ *
+ * Ohne getroffene Wahl gilt `fallback`. Im Raum ist das der eigene Platz: wer
+ * beitritt, will seinen Block sehen und nicht den des ersten Spielers, in dem er
+ * ohnehin nichts eintragen darf.
+ */
+export function activePlayer(state: QwixxState, fallback = 0): Player | null {
+  const chosen = state.players.find((p) => p.id === state.activeId);
+  return chosen ?? state.players[fallback] ?? state.players[0] ?? null;
 }
 
 /** Waehrend des Spiels verdeckt – in der Auswertung sind die Punkte immer sichtbar. */
@@ -162,7 +175,6 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
    * ohne dass eine Regel doppelt geschrieben wird.
    */
   sync: {
-    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
     seatData: (state, index) => {
       const player = state.players[index];
       return player ? sheetOf(state, player.id) : blankSheet();
@@ -192,9 +204,8 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
         const ids = new Set(draft.players.map((p) => p.id));
         for (const id of Object.keys(draft.sheets)) if (!ids.has(id)) delete draft.sheets[id];
         for (const player of draft.players) draft.sheets[player.id] ??= blankSheet();
-        if (!draft.activeId || !ids.has(draft.activeId)) {
-          draft.activeId = draft.players[0]?.id ?? null;
-        }
+        // Nur eine Wahl aufloesen, die es nicht mehr gibt – keine neue treffen.
+        if (draft.activeId && !ids.has(draft.activeId)) draft.activeId = null;
         break;
       }
 
@@ -222,7 +233,7 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
       case "removePlayer": {
         draft.players = draft.players.filter((p) => p.id !== action.id);
         delete draft.sheets[action.id];
-        if (draft.activeId === action.id) draft.activeId = draft.players[0]?.id ?? null;
+        if (draft.activeId === action.id) draft.activeId = null;
         break;
       }
 
@@ -260,7 +271,7 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
       case "startShared": {
         clearSheets(draft);
         draft.phase = "play";
-        draft.activeId = draft.players[0]?.id ?? null;
+        draft.activeId = null;
         break;
       }
 
@@ -269,7 +280,7 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
         draft.players = [player];
         clearSheets(draft);
         draft.phase = "play";
-        draft.activeId = player.id;
+        draft.activeId = null;
         break;
       }
 
@@ -294,8 +305,10 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
           draft.players.map((p) => draft.sheets[p.id] ?? blankSheet()),
           draft.extClosed,
         );
-        if (isBlocked(sheet, action.row, closed)) break;
-        if (cellState(sheet, action.row, action.index, false) !== "available") break;
+        // Eine einzige Herleitung fuer Aussehen und Verhalten – auch fuer die
+        // Reihe, die jemand anders gerade geschlossen hat.
+        const blocked = isBlocked(sheet, action.row, closed);
+        if (cellState(sheet, action.row, action.index, blocked) !== "available") break;
 
         row[action.index] = true;
         if (action.index === LAST) sheet.locked[action.row] = true;
@@ -321,7 +334,6 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
       // Versehentlich ausgewertet: zurueck in den Block, nichts wird zurueckgesetzt.
       case "resume": {
         draft.phase = "play";
-        draft.activeId = draft.activeId ?? draft.players[0]?.id ?? null;
         break;
       }
 
@@ -333,7 +345,7 @@ export const qwixxGame: GameDefinition<QwixxState, QwixxAction> = {
       case "playAgain": {
         clearSheets(draft);
         draft.phase = "play";
-        draft.activeId = draft.players[0]?.id ?? null;
+        draft.activeId = null;
         break;
       }
     }

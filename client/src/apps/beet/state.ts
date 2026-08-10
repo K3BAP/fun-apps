@@ -183,7 +183,6 @@ export const beetGame: GameDefinition<BeetState, BeetAction> = {
    * gemeinsam weiter – der Bonus haengt schliesslich von allen ab.
    */
   sync: {
-    seatsOf: (state) => state.players.map((p) => ({ name: p.name, color: p.color })),
     seatData: (state, index): BeetSeatData => {
       const player = state.players[index];
       return player

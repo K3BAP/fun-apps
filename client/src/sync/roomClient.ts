@@ -17,20 +17,32 @@ export type RoomSnapshot = {
   status: RoomStatus;
   room: RoomState | null;
   code: RoomCode | null;
-  mySeats: SeatId[];
+  /** Der eine Platz, der diesem Geraet gehoert. */
+  mySeat: SeatId | null;
+  /**
+   * Zaehlt bei jedem Eintritt in einen Raum hoch.
+   *
+   * Wer beitritt, faengt lokal bei null an – der Block der letzten Partie hat
+   * mit dem Raum nichts zu tun. Alles, was sich merkt, was es schon eingearbeitet
+   * hat, muss das an dieser Zahl festmachen: sonst haelt es einen Stand fuer
+   * bereits uebernommen, den es lokal gar nicht mehr gibt.
+   */
+  epoch: number;
   /** Wie viele Aenderungen warten noch auf die Leitung? */
   pending: number;
   error: string | null;
 };
 
 const SESSION_KEY = nsKey("room");
-type Session = { code: RoomCode; gameId: string; seats: SeatId[] };
+/** Der Name steht mit drin, weil das `hello` beim Wiederverbinden ihn braucht. */
+type Session = { code: RoomCode; gameId: string; name: string };
 
 const EMPTY: RoomSnapshot = {
   status: "off",
   room: null,
   code: null,
-  mySeats: [],
+  mySeat: null,
+  epoch: 0,
   pending: 0,
   error: null,
 };
@@ -75,10 +87,15 @@ export class RoomClient {
    */
   resume(gameId: string): void {
     const session = readJson<Session | null>(SESSION_KEY, null);
-    if (session?.code && session.gameId === gameId) this.join(session.code);
+    if (session?.code && session.gameId === gameId) this.join(session.code, session.name);
   }
 
-  async create(body: Omit<CreateRoomBody, "host">): Promise<RoomCode> {
+  /** Gibt es fuer dieses Spiel eine Sitzung, die man fortsetzen koennte? */
+  hasSession(gameId: string): boolean {
+    return readJson<Session | null>(SESSION_KEY, null)?.gameId === gameId;
+  }
+
+  async create(body: Omit<CreateRoomBody, "host">, name: string): Promise<RoomCode> {
     const response = await fetch("/api/rooms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,35 +103,33 @@ export class RoomClient {
     });
     if (!response.ok) throw new Error("Raum konnte nicht angelegt werden.");
     const { code } = (await response.json()) as CreateRoomResponse;
-    this.join(code);
+    this.join(code, name);
     return code;
   }
 
-  join(rawCode: string): void {
+  join(rawCode: string, name: string): void {
     const code = normalizeCode(rawCode);
     this.unsubscribe?.();
     this.unsubscribe = this.transport.subscribe((event) => this.onTransport(event));
-    this.set({ status: "connecting", code, error: null });
-    this.transport.connect(code, this.device);
+    this.set({ status: "connecting", code, error: null, epoch: this.snapshot.epoch + 1 });
+    this.transport.connect(code, this.device, name);
   }
 
+  /**
+   * Den Raum verlassen. In der Lobby raeumt das auch den Platz; laeuft das Spiel
+   * schon, weist der Server das zurueck – der Platz bleibt dort stehen, und
+   * dieses Geraet klinkt sich nur aus.
+   */
   leave(): void {
+    this.transport.send({ t: "leave" });
     this.transport.close();
     this.unsubscribe?.();
     this.unsubscribe = null;
     this.outbox.clear();
     this.revs.clear();
     removeKey(SESSION_KEY);
-    this.snapshot = EMPTY;
+    this.snapshot = { ...EMPTY, epoch: this.snapshot.epoch };
     this.listeners.forEach((listener) => listener());
-  }
-
-  claim(seat: SeatId): void {
-    this.transport.send({ t: "claim", seat });
-  }
-
-  releaseSeat(seat: SeatId): void {
-    this.transport.send({ t: "release", seat });
   }
 
   setReady(seat: SeatId, ready: boolean): void {
@@ -143,6 +158,15 @@ export class RoomClient {
     // bis dahin bleibt der Eintrag stehen und wird notfalls erneut gesendet.
   }
 
+  private remember(room: RoomState): void {
+    const name = room.seats.find((seat) => seat.owner === this.device)?.name ?? "";
+    writeJson(SESSION_KEY, { code: room.code, gameId: room.gameId, name } satisfies Session);
+  }
+
+  private mySeatIn(room: RoomState): SeatId | null {
+    return room.seats.find((seat) => seat.owner === this.device)?.id ?? null;
+  }
+
   private onTransport(event: import("./transport").TransportEvent): void {
     if (event.type === "open") {
       this.set({ status: "online" });
@@ -161,24 +185,24 @@ export class RoomClient {
         // Abgleich: was lokal neuer ist, geht noch einmal raus; alles andere
         // wird uebernommen.
         for (const seat of msg.room.seats) {
-          if (seat.owner === this.device) {
-            const mine = this.revs.get(seat.id) ?? 0;
-            if (mine > seat.rev) {
-              const entry = this.outbox.get(seat.id);
-              if (entry) this.transport.send({ t: "seat", seat: seat.id, ...entry });
-            } else {
-              this.revs.set(seat.id, seat.rev);
-              this.outbox.delete(seat.id);
-            }
+          if (seat.owner !== this.device) continue;
+          const mine = this.revs.get(seat.id) ?? 0;
+          if (mine > seat.rev) {
+            const entry = this.outbox.get(seat.id);
+            if (entry) this.transport.send({ t: "seat", seat: seat.id, ...entry });
+          } else {
+            this.revs.set(seat.id, seat.rev);
+            this.outbox.delete(seat.id);
           }
         }
-        const mySeats = msg.you.seats;
-        writeJson(SESSION_KEY, {
+        this.remember(msg.room);
+        this.set({
+          status: "online",
+          room: msg.room,
           code: msg.room.code,
-          gameId: msg.room.gameId,
-          seats: mySeats,
-        } satisfies Session);
-        this.set({ status: "online", room: msg.room, code: msg.room.code, mySeats, error: null });
+          mySeat: msg.you.seat,
+          error: null,
+        });
         return;
       }
 
@@ -196,25 +220,18 @@ export class RoomClient {
       }
 
       case "room": {
-        const mySeats = msg.room.seats
-          .filter((seat) => seat.owner === this.device)
-          .map((seat) => seat.id);
-        writeJson(SESSION_KEY, {
-          code: msg.room.code,
-          gameId: msg.room.gameId,
-          seats: mySeats,
-        } satisfies Session);
-        this.set({ room: msg.room, code: msg.room.code, mySeats });
+        this.remember(msg.room);
+        this.set({ room: msg.room, code: msg.room.code, mySeat: this.mySeatIn(msg.room) });
         return;
       }
 
       case "error": {
-        // Ein verschwundener Raum ist keine Stoerung, sondern ein Zustand:
-        // lokal wird ohne Unterbrechung weitergespielt.
-        if (msg.code === "no_room") {
+        // Ein verschwundener oder verschlossener Raum ist keine Stoerung,
+        // sondern ein Zustand: lokal wird ohne Unterbrechung weitergespielt.
+        if (msg.code === "no_room" || msg.code === "room_locked" || msg.code === "room_full") {
           removeKey(SESSION_KEY);
           this.transport.close();
-          this.set({ status: "off", room: null, mySeats: [], error: msg.msg });
+          this.set({ status: "off", room: null, mySeat: null, error: msg.msg });
           return;
         }
         this.set({ error: msg.msg });

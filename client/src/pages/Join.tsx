@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { isValidCode, normalizeCode, type RoomInfo } from "@fun/shared";
 import { APPS } from "@/apps/registry";
+import { devParams } from "@/sync/device";
 import { ShellScope } from "@/theme/ThemeProvider";
 
 /**
@@ -32,11 +33,7 @@ export default function Join() {
           setLookupError("Diesen Raum gibt es nicht (mehr).");
           return;
         }
-        const params = new URLSearchParams({ raum: clean });
-        // Den Entwicklungs-Schalter mitnehmen, sonst verliert der zweite Tab
-        // beim Beitreten seinen eigenen Speicher.
-        const device = new URLSearchParams(location.search).get("device");
-        if (device) params.set("device", device);
+        const params = new URLSearchParams({ raum: clean, ...devParams() });
         void navigate(`${app.path}?${params}`, { replace: true });
       })
       .catch(() => {

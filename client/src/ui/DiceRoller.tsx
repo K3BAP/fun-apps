@@ -26,11 +26,14 @@ export function DiceRoller({
   onClose,
   dice,
   title = "Würfel",
+  note,
 }: {
   open: boolean;
   onClose: () => void;
   dice: readonly DieSpec[];
   title?: string;
+  /** Warum hier weniger Würfel liegen als sonst – schlägt den Standardhinweis. */
+  note?: string;
 }) {
   const [values, setValues] = useState<number[]>(() => dice.map(roll));
   const [held, setHeld] = useState<boolean[]>(() => dice.map(() => false));
@@ -56,7 +59,7 @@ export function DiceRoller({
       open={open}
       onClose={onClose}
       title={title}
-      description={canHold ? "Antippen hält einen Würfel fest." : undefined}
+      description={note ?? (canHold ? "Antippen hält einen Würfel fest." : undefined)}
       footer={
         <div className="flex w-full gap-2">
           {rolls > 0 && (

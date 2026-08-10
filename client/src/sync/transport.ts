@@ -12,7 +12,12 @@ export type TransportEvent =
  * nichts davon. Das Puffern liegt bewusst eine Ebene hoeher, nicht hier.
  */
 export interface Transport {
-  connect(code: RoomCode, device: DeviceId): void;
+  /**
+   * Der Name gehoert zum Verbinden, weil Anmelden und Beitreten dasselbe sind:
+   * wer sich anmeldet und noch keinen Platz hat, bekommt einen – unter diesem
+   * Namen.
+   */
+  connect(code: RoomCode, device: DeviceId, name: string): void;
   send(msg: ClientMsg): void;
   close(): void;
   subscribe(listener: (event: TransportEvent) => void): () => void;

@@ -8,11 +8,15 @@ import type {
   Seat,
   SeatId,
 } from "@fun/shared";
+import { nextColor } from "@fun/shared";
 
 export type Result<T> = { ok: true; value: T } | { ok: false; code: ErrorCode; msg: string };
 
 const ok = <T>(value: T): Result<T> => ({ ok: true, value });
 const fail = <T>(code: ErrorCode, msg: string): Result<T> => ({ ok: false, code, msg });
+
+/** Laenger als das passt in keine Spielerliste – und niemand tippt es ein. */
+const NAME_MAX = 24;
 
 export function createRoom(code: RoomCode, body: CreateRoomBody): RoomState {
   return {
@@ -20,52 +24,92 @@ export function createRoom(code: RoomCode, body: CreateRoomBody): RoomState {
     gameId: body.gameId,
     gameVersion: body.gameVersion,
     host: body.host,
-    config: body.config,
-    phase: body.phase ?? "setup",
+    maxSeats: body.maxSeats,
+    config: null,
+    phase: "setup",
     barrier: null,
-    seats: body.seats.map((seat, index) => ({
-      id: `s${index + 1}`,
-      name: seat.name,
-      color: seat.color,
-      owner: null,
-      online: false,
-      ready: false,
-      rev: 0,
-      data: null,
-    })),
+    seats: [],
     rev: 0,
   };
+}
+
+/**
+ * Eine Kennung, die keinem lebenden Platz gehoert.
+ *
+ * Bewusst aus dem Hoechststand abgeleitet und nicht aus der Anzahl: verlaesst
+ * der zweite von dreien den Raum, waere `s${length + 1}` wieder `s3` – und damit
+ * die Kennung eines Platzes, den es noch gibt.
+ */
+function nextSeatId(room: RoomState): SeatId {
+  const highest = room.seats.reduce((max, seat) => Math.max(max, Number(seat.id.slice(1)) || 0), 0);
+  return `s${highest + 1}`;
 }
 
 function seatOf(room: RoomState, id: SeatId): Seat | undefined {
   return room.seats.find((seat) => seat.id === id);
 }
 
+export function seatOwnedBy(room: RoomState, device: DeviceId): Seat | undefined {
+  return room.seats.find((seat) => seat.owner === device);
+}
+
 /**
- * Einen Platz belegen. Wieder-Belegen durch dasselbe Geraet ist erlaubt – genau
- * das passiert nach einem Reload oder einer Neuverbindung.
+ * Anmelden heisst beitreten: wer noch keinen Platz hat, bekommt einen.
+ *
+ * Ein wiederkehrendes Geraet erkennt der Raum an seiner Kennung und gibt ihm
+ * seinen alten Platz zurueck – deshalb ueberstehen Reload und Funkloch das
+ * Spiel, ohne dass jemand etwas „uebernehmen“ muesste. Nur wer beim Start nicht
+ * dabei war, kommt nicht mehr hinein: Plaetze mitten im Spiel anzuhaengen
+ * verschoebe die Reihenfolge, an der alle Bloecke haengen.
  */
-export function claim(room: RoomState, device: DeviceId, seatId: SeatId): Result<Seat> {
-  const seat = seatOf(room, seatId);
-  if (!seat) return fail("unknown_seat", `Platz ${seatId} gibt es nicht.`);
-  if (seat.owner !== null && seat.owner !== device) {
-    return fail("seat_taken", `Platz ${seatId} ist schon belegt.`);
+export function joinRoom(room: RoomState, device: DeviceId, name: string): Result<Seat> {
+  const existing = seatOwnedBy(room, device);
+  if (existing) {
+    if (!existing.online) {
+      existing.online = true;
+      room.rev += 1;
+    }
+    return ok(existing);
   }
-  seat.owner = device;
-  seat.online = true;
+
+  if (room.phase !== "setup") {
+    return fail("room_locked", "Das Spiel läuft schon.");
+  }
+  if (room.seats.length >= room.maxSeats) {
+    return fail("room_full", `Der Raum ist voll (${room.maxSeats} Spieler).`);
+  }
+
+  const clean = name.trim().slice(0, NAME_MAX);
+  const seat: Seat = {
+    id: nextSeatId(room),
+    name: clean === "" ? `Spieler ${room.seats.length + 1}` : clean,
+    color: nextColor(room.seats.map((s) => s.color)),
+    owner: device,
+    online: true,
+    ready: false,
+    rev: 0,
+    data: null,
+  };
+  room.seats.push(seat);
   room.rev += 1;
   return ok(seat);
 }
 
-export function release(room: RoomState, device: DeviceId, seatId: SeatId): Result<Seat> {
-  const seat = seatOf(room, seatId);
-  if (!seat) return fail("unknown_seat", `Platz ${seatId} gibt es nicht.`);
-  if (seat.owner !== device) return fail("not_owner", "Das ist nicht dein Platz.");
-  seat.owner = null;
-  seat.online = false;
-  seat.ready = false;
+/**
+ * Den eigenen Platz raeumen – nur in der Lobby.
+ *
+ * Sobald gespielt wird, bleibt der Platz stehen, auch wenn sein Geraet
+ * verschwindet: er traegt den halben Spielstand der anderen mit sich (die
+ * gesperrten Reihen in Qwixx, den Bonus in Ab ins Beet).
+ */
+export function leaveRoom(room: RoomState, device: DeviceId): Result<SeatId> {
+  const seat = seatOwnedBy(room, device);
+  if (!seat) return fail("unknown_seat", "Du hast hier keinen Platz.");
+  if (room.phase !== "setup") return fail("room_locked", "Das Spiel läuft schon.");
+
+  room.seats = room.seats.filter((candidate) => candidate !== seat);
   room.rev += 1;
-  return ok(seat);
+  return ok(seat.id);
 }
 
 /**
@@ -128,33 +172,20 @@ export function setRoom(room: RoomState, device: DeviceId, patch: RoomPatch): Re
   return ok(room);
 }
 
-/**
- * Die Schranke oeffnet, sobald alle **belegten** Plaetze bereit sind. Freie
- * Plaetze zaehlen nicht mit – sonst wartete eine Runde ewig auf einen Platz,
- * den niemand genommen hat.
- */
+/** Die Schranke oeffnet, sobald alle Plaetze bereit sind. */
 export function evaluateBarrier(room: RoomState): boolean {
   if (!room.barrier || room.barrier.open) return false;
-  const taken = room.seats.filter((seat) => seat.owner !== null);
-  if (taken.length === 0 || !taken.every((seat) => seat.ready)) return false;
+  if (room.seats.length === 0 || !room.seats.every((seat) => seat.ready)) return false;
   room.barrier.open = true;
   room.rev += 1;
   return true;
 }
 
 /** Verbindung weg: der Platz bleibt dem Geraet, er ist nur gerade nicht da. */
-export function setOnline(room: RoomState, device: DeviceId, online: boolean): SeatId[] {
-  const changed: SeatId[] = [];
-  for (const seat of room.seats) {
-    if (seat.owner === device && seat.online !== online) {
-      seat.online = online;
-      changed.push(seat.id);
-    }
-  }
-  if (changed.length > 0) room.rev += 1;
-  return changed;
-}
-
-export function seatsOwnedBy(room: RoomState, device: DeviceId): SeatId[] {
-  return room.seats.filter((seat) => seat.owner === device).map((seat) => seat.id);
+export function setOnline(room: RoomState, device: DeviceId, online: boolean): boolean {
+  const seat = seatOwnedBy(room, device);
+  if (!seat || seat.online === online) return false;
+  seat.online = online;
+  room.rev += 1;
+  return true;
 }

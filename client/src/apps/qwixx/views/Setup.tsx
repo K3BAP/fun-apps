@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { NAME_MAX_LENGTH } from "@/game/players";
+import { RoomPanel } from "@/sync/RoomPanel";
+import { StartGameButton } from "@/sync/StartGameButton";
+import { useRoomRole } from "@/sync/useRoomRole";
 import { SetupCard } from "@/ui/SetupCard";
 import { Container } from "@/ui/Container";
 import { AppHero } from "@/ui/AppHero";
@@ -74,29 +77,36 @@ function SharedSetup() {
   const { store } = useQwixx();
   const { players } = store.state;
   const { min, max } = manifest.players;
+  const { inRoom, isGuest } = useRoomRole();
 
   return (
     <>
       <SetupCard>
-        <PlayerSetup
-          players={players}
-          min={min}
-          max={max}
-          onAdd={(name) => store.dispatch({ type: "addPlayer", name })}
-          onRemove={(id) => store.dispatch({ type: "removePlayer", id })}
-          onReorder={(ids) => store.dispatch({ type: "reorderPlayers", ids })}
-        />
-        <Options />
+        {inRoom ? (
+          <RoomPanel />
+        ) : (
+          <PlayerSetup
+            players={players}
+            min={min}
+            max={max}
+            onAdd={(name) => store.dispatch({ type: "addPlayer", name })}
+            onRemove={(id) => store.dispatch({ type: "removePlayer", id })}
+            onReorder={(ids) => store.dispatch({ type: "reorderPlayers", ids })}
+          />
+        )}
+        {/* Die Optionen gelten fuer den ganzen Tisch – im Raum gibt der Host sie
+            vor, und `disabled` am Fieldset sperrt alles darin auf einmal. */}
+        <fieldset disabled={isGuest} className={isGuest ? "opacity-60" : ""}>
+          <Options />
+        </fieldset>
       </SetupCard>
 
-      <button
-        type="button"
-        className="btn btn-primary btn-lg"
-        disabled={players.length < min}
-        onClick={() => store.dispatch({ type: "startShared" })}
-      >
-        {t.startShared}
-      </button>
+      <StartGameButton
+        label={t.startShared}
+        count={players.length}
+        min={min}
+        onStart={() => store.dispatch({ type: "startShared" })}
+      />
     </>
   );
 }
@@ -104,26 +114,31 @@ function SharedSetup() {
 export function Setup() {
   const { store } = useQwixx();
   const { mode, variant } = store.state;
-  const solo = mode === "solo";
+  const { inRoom, isGuest } = useRoomRole();
+  // Im Raum sitzt jeder an seinem eigenen Block – „nur ich“ waere ein
+  // Widerspruch in sich.
+  const solo = mode === "solo" && !inRoom;
 
   return (
     <Container size="form" className="flex flex-col gap-5 px-4 pb-8 safe-bottom">
       <AppHero subtitle={t.tagline} back />
 
-      <div className="flex flex-col gap-1">
-        <span className="text-base-content/60 text-xs">{t.modeLabel}</span>
-        <SegmentedControl
-          label={t.modeLabel}
-          value={mode}
-          onChange={(next) => store.dispatch({ type: "setMode", mode: next })}
-          options={[
-            { key: "shared", label: t.modeShared, hint: t.modeSharedHint },
-            { key: "solo", label: t.modeSolo, hint: t.modeSoloHint },
-          ]}
-        />
-      </div>
+      {!inRoom && (
+        <div className="flex flex-col gap-1">
+          <span className="text-base-content/60 text-xs">{t.modeLabel}</span>
+          <SegmentedControl
+            label={t.modeLabel}
+            value={mode}
+            onChange={(next) => store.dispatch({ type: "setMode", mode: next })}
+            options={[
+              { key: "shared", label: t.modeShared, hint: t.modeSharedHint },
+              { key: "solo", label: t.modeSolo, hint: t.modeSoloHint },
+            ]}
+          />
+        </div>
+      )}
 
-      <div className="flex flex-col gap-1">
+      <fieldset disabled={isGuest} className={`flex flex-col gap-1 ${isGuest ? "opacity-60" : ""}`}>
         <span className="text-base-content/60 text-xs">{t.blockLabel}</span>
         <SegmentedControl
           label={t.blockLabel}
@@ -139,7 +154,7 @@ export function Setup() {
           {variantInfo(variant).hint}
           {solo && t.soloAllSame}
         </p>
-      </div>
+      </fieldset>
 
       {solo ? <SoloSetup /> : <SharedSetup />}
     </Container>

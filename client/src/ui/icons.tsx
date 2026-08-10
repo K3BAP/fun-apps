@@ -105,3 +105,14 @@ export function CheckIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/** Zwei Geraete, die dasselbe Spiel zeigen – der Online-Modus. */
+export function DevicesIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="2" y="4" width="12" height="9" rx="1.5" />
+      <path d="M5 17h6" />
+      <rect x="16" y="9" width="6" height="11" rx="1.5" />
+    </Icon>
+  );
+}

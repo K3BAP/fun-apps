@@ -22,7 +22,9 @@ export function Play() {
   const mySeatIndex = useMySeatIndex();
   const { tap } = useHaptics();
   const { state } = store;
-  const player = activePlayer(state);
+  // Ohne eigene Wahl zeigt der Block den eigenen Platz – ausserhalb eines Raums
+  // gibt es keinen, dann bleibt es beim ersten Spieler.
+  const player = activePlayer(state, mySeatIndex !== null && mySeatIndex >= 0 ? mySeatIndex : 0);
   if (!player) return null;
 
   // Im Raum darf man nur in den eigenen Block schreiben – die anderen sind zum

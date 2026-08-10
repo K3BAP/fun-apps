@@ -1,3 +1,5 @@
+import { nextColor } from "@fun/shared";
+
 export type PlayerId = string;
 
 export type Player = {
@@ -7,17 +9,7 @@ export type Player = {
   color: string;
 };
 
-/** Die Akzentfarben der bisherigen Apps, unveraendert uebernommen. */
-export const PLAYER_COLORS = [
-  "#c9a15a",
-  "#4a7a4d",
-  "#b5533f",
-  "#5b7fa6",
-  "#8a6bb0",
-  "#d98a2b",
-  "#3f9e9e",
-  "#a6708b",
-] as const;
+export { PLAYER_COLORS } from "@fun/shared";
 
 let counter = 0;
 
@@ -26,20 +18,8 @@ export function newPlayerId(): PlayerId {
   return `p${Date.now().toString(36)}${counter.toString(36)}`;
 }
 
-/**
- * Erste noch freie Farbe. Wird ein Spieler entfernt und ein neuer angelegt,
- * bekommt der neue die frei gewordene Farbe – kein Dublettenrisiko, solange
- * nicht mehr Spieler als Farben im Spiel sind.
- */
-function nextColor(taken: readonly Player[]): string {
-  const used = new Set(taken.map((p) => p.color));
-  return (
-    PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[taken.length % PLAYER_COLORS.length]
-  );
-}
-
 export function makePlayer(name: string, existing: readonly Player[]): Player {
-  return { id: newPlayerId(), name, color: nextColor(existing) };
+  return { id: newPlayerId(), name, color: nextColor(existing.map((p) => p.color)) };
 }
 
 export type RosterEntry = { name: string; color: string };
