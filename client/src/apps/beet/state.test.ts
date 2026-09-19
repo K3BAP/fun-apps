@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { produce } from "immer";
 import type { Player } from "@/game/players";
-import { gameTotal } from "./rules";
+import { gameTotal, newBed } from "./rules";
 import { beetGame, type BeetAction, type BeetConfig, type BeetState } from "./state";
 
 function apply(state: BeetState, action: BeetAction): BeetState {
@@ -51,6 +51,43 @@ describe("Durchgänge über die Leitung", () => {
     expect(gameTotal(guest.rounds, "guest-b")).toBe(5);
     expect(gameTotal(host.rounds, "host-1")).toBe(21);
     expect(guest.round).toBe(2);
+  });
+
+  it("räumt die Eingabemaske ab, wenn der Host einen Durchgang abschließt", () => {
+    // Der Gast schaltet nicht selbst weiter – er erfährt den neuen Durchgang
+    // nur über `config`. Blieben die Beete stehen, tippte er den nächsten
+    // Durchgang über die alten Werte.
+    const guest = {
+      ...deviceWith(["x", "y"]),
+      draftBeds: { x: [{ ...newBed(), salate: 3 }, newBed(), newBed()] },
+      draftTier: { x: 2, y: 1 },
+    };
+
+    const host = apply(
+      { ...deviceWith(["a", "b"]), step: "tier" as const },
+      { type: "barrierOpen", token: "r1:tier" },
+    );
+    const after = apply(guest, {
+      type: "setConfig",
+      config: beetGame.sync!.configOf!(host) as BeetConfig,
+    });
+
+    expect(after.round).toBe(2);
+    expect(after.draftBeds).toEqual({});
+    expect(after.draftTier).toEqual({});
+    expect(after.rounds).toHaveLength(1);
+  });
+
+  it("lässt die Eingabemaske stehen, solange nur der Schritt wechselt", () => {
+    const guest = { ...deviceWith(["x", "y"]), draftTier: { x: 2 } };
+    const host = apply(deviceWith(["a", "b"]), { type: "barrierOpen", token: "r1:beet" });
+    const after = apply(guest, {
+      type: "setConfig",
+      config: beetGame.sync!.configOf!(host) as BeetConfig,
+    });
+
+    expect(after.step).toBe("bonus");
+    expect(after.draftTier).toEqual({ x: 2 });
   });
 
   it("überträgt einen leeren Verlauf unbeschadet", () => {

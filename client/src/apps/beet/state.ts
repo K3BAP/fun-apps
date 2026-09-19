@@ -227,6 +227,15 @@ export const beetGame: GameDefinition<BeetState, BeetAction> = {
       }
 
       case "setConfig": {
+        // Ein abgeschlossener Durchgang raeumt die Eingabemaske ab. Der Host
+        // macht das in `closeRound`; die anderen Geraete erfahren davon nur
+        // hier – sonst stuenden im neuen Durchgang noch die Beete des alten in
+        // der Maske und wanderten beim naechsten Tippen wieder an den Tisch.
+        if (action.config.rounds.length !== draft.rounds.length) {
+          draft.draftBeds = {};
+          draft.draftTier = {};
+          draft.beetIdx = 0;
+        }
         draft.round = action.config.round;
         draft.step = action.config.step;
         draft.rounds = fromWire(action.config.rounds, draft.players);
